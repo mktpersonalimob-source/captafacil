@@ -308,7 +308,7 @@
     <!-- ======================================================================== -->
     <!-- VIEW: DASHBOARD (TELA PRINCIPAL) -->
     <!-- ======================================================================== -->
-    <div id="dashboard-view" class="view active max-w-4xl mx-auto p-4 sm:p-8 my-6 sm:my-10 bg-white rounded-2xl shadow-lg">
+    <div id="dashboard-view" class="view max-w-4xl mx-auto p-4 sm:p-8 my-6 sm:my-10 bg-white rounded-2xl shadow-lg">
         <header class="flex flex-wrap justify-between items-center mb-10">
             <div class="flex items-center mb-4 sm:mb-0">
                 <svg class="w-52" viewBox="0 0 215 40" xmlns="http://www.w3.org/2000/svg">
@@ -961,6 +961,13 @@
             <span id="out-codigo-captafacil" style="margin-left: 10px; font-weight: bold;"></span>
         </div>
     </div>
+
+    <!-- Global Loading Spinner -->
+    <div id="global-loading-spinner" class="fixed inset-0 bg-white bg-opacity-90 z-[9999] flex items-center justify-center flex-col">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-orange-500 mb-4"></div>
+        <p class="text-lg text-gray-700 font-semibold">Carregando...</p>
+    </div>
+
 
     <!-- ======================================================================== -->
     <!-- RODAPÉ FIXO -->
@@ -2009,6 +2016,7 @@
 
         // A lógica principal da aplicação só roda DEPOIS que fetchUserDetails confirmar que o setup está completo.
         function initializeApp(user) {
+            document.getElementById('global-loading-spinner').classList.add('hidden'); // Hide loading spinner
             if (user.email === adminEmail) {
                 document.getElementById('admin-button').classList.remove('hidden');
                 const counterWrapper = document.getElementById('firebase-counter-wrapper');

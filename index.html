@@ -30,14 +30,10 @@
     </style>
 </head>
 <body class="flex items-center justify-center h-screen p-4">
-    <div class="w-full max-w-sm p-8 sm:p-12 bg-white rounded-lg shadow-md text-center">
-        <svg class="w-48 mx-auto mb-8" viewBox="0 0 215 40" xmlns="http://www.w3.org/2000/svg">
-            <rect x="1" y="1" width="38" height="38" rx="5" fill="#EA580C" />
-            <path d="M20 12l8 6v8H12v-8l8-6z" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-            <text x="50" y="29" font-family="Inter, sans-serif" font-size="22" font-weight="800" fill="#374151" letter-spacing="-0.5px">Capta</text>
-            <text x="125" y="29" font-family="Inter, sans-serif" font-size="22" font-weight="800" fill="#EA580C" letter-spacing="-0.5px">Fácil</text>
-        </svg>
-        <p class="text-gray-500 animate-pulse">Carregando sistema...</p>
+    <!-- Global Loading Spinner -->
+    <div id="global-loading-spinner" class="fixed inset-0 bg-white bg-opacity-90 z-[9999] flex items-center justify-center flex-col">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-orange-500 mb-4"></div>
+        <p class="text-lg text-gray-700 font-semibold">Carregando sistema...</p>
     </div>
 
     <!-- Firebase SDKs -->

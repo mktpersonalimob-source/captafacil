@@ -38,6 +38,14 @@
 </head>
 <body class="mb-20">
 
+    <!-- Global Loading Spinner -->
+    <div id="global-loading-spinner" class="fixed inset-0 bg-white bg-opacity-90 z-[9999] flex items-center justify-center flex-col">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-orange-500 mb-4"></div>
+        <p class="text-lg text-gray-700 font-semibold">Carregando...</p>
+    </div>
+
+
+
     <!-- ======================================================================== -->
     <!-- MODAL DE ALERTA CUSTOMIZADO -->
     <!-- ======================================================================== -->
@@ -399,6 +407,7 @@
         }
 
         function initializeAppAdmin(user) {
+            document.getElementById('global-loading-spinner').classList.add('hidden'); // Hide loading spinner
             currentUser = user; // Set currentUser for admin.html
             const counterWrapper = document.getElementById('firebase-counter-wrapper');
             if (counterWrapper) {
