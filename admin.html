@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - CaptaFácil</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='1' y='1' width='22' height='22' rx='4' fill='%23EA580C'/%3E%3Cpath d='M12 6l6 5v7H6v-7l6-5z' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif;
+            background-color: #FFF9F3; /* Cor de fundo base do SVG */
+        }
+
+        /*
+         * Camada para o fundo com opacidade.
+         * O SVG é embutido aqui como data-uri para não precisar de um arquivo externo.
+        */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 800'%3E%3Cg%3E%3Crect fill='%23FFF9F3' width='1200' height='800'/%3E%3Cg opacity='0.5'%3E%3Cpath fill='%23E2803B' d='m-108.8 188.4 108.8 188.5h217.6l108.8-188.5-108.8-188.4H.1z'/%3E%3Cpath fill='%23E2803B' d='m0 0 .1 188.4 108.7 188.4h217.6L435.1 0 326.4-188.4H108.8z'/%3E%3Cpath fill='%23E2803B' d='m783.4 800 104.2 180.4h208.3L1200 800l-104.1-180.4H887.6z'/%3E%3Cpath fill='%23E2803B' d='m-188.9 800 94.5 163.6h188.9L189 800l-94.5-163.6h-189z'/%3E%3Cpath fill='%23E2803B' d='m1092 0 54 93.5h108l54-93.5-54-93.5h-108z'/%3E%3Cpath fill='%23E2803B' d='m991.7 619.6 104.2 180.4h208.3L1408.3 619.6l-104.1-180.4h-208.3z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-position: center;
+            z-index: -1; /* Coloca o fundo atrás de todo o conteúdo */
+        }
+
+        /* Modal Customizado para substituir alert() */
+        #custom-alert { display: none; }
+    </style>
+</head>
+<body class="mb-20">
+
+    <!-- ======================================================================== -->
+    <!-- MODAL DE ALERTA CUSTOMIZADO -->
+    <!-- ======================================================================== -->
+    <div id="custom-alert" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 text-center transform transition-transform scale-100">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+            </div>
+            <h3 class="text-lg leading-6 font-medium text-gray-900" id="alert-title">Atenção</h3>
+            <div class="mt-2 text-sm text-gray-500" id="alert-message">
+                Preencha os campos obrigatórios.
+            </div>
+            <button onclick="closeAlert()" class="mt-5 w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-orange-600 text-base font-medium text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 sm:text-sm">
+                Entendi
+            </button>
+        </div>
+    </div>
+
+    <!-- ======================================================================== -->
+    <!-- MODAL DE CONFIRMAÇÃO -->
+    <!-- ======================================================================== -->
+    <div id="custom-confirm" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 text-center transform transition-transform scale-100">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4">
+                <svg class="h-6 w-6 text-yellow-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
+            </div>
+            <h3 class="text-lg leading-6 font-medium text-gray-900" id="confirm-title">Confirmar Ação</h3>
+            <div class="mt-2 text-sm text-gray-500" id="confirm-message">Você tem certeza?</div>
+            <div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
+                <button id="confirm-btn-yes" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:col-start-2 sm:text-sm">
+                    Sim, Continuar
+                </button>
+                <button id="confirm-btn-no" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 sm:mt-0 sm:col-start-1 sm:text-sm">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="admin-container" class="max-w-6xl mx-auto p-4 sm:p-8 my-6 sm:my-10">
+        <!-- PAINEL PRINCIPAL -->
+        <div id="admin-panel" class="admin-view bg-white rounded-2xl shadow-lg p-4 sm:p-8">
+            <header class="flex flex-wrap justify-center sm:justify-between items-center mb-6 gap-4 border-b pb-4">
+                <svg class="h-9" viewBox="0 0 215 40" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="1" y="1" width="38" height="38" rx="5" fill="#EA580C" />
+                    <path d="M20 12l8 6v8H12v-8l8-6z" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    <text x="50" y="29" font-family="Inter, sans-serif" font-size="22" font-weight="800" fill="#374151" letter-spacing="-0.5px">Capta</text>
+                    <text x="125" y="29" font-family="Inter, sans-serif" font-size="22" font-weight="800" fill="#EA580C" letter-spacing="-0.5px">Fácil</text>
+                </svg>
+                <a href="home.html" class="px-4 py-2 text-sm font-medium text-orange-600 border border-orange-600 rounded-lg hover:bg-orange-50 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg>
+                    <span>Voltar para Home</span>
+                </a>
+            </header>
+
+            <h1 class="text-3xl font-bold text-gray-800 my-8">Painel Administrativo</h1>
+
+            <main class="space-y-10">
+                <!-- Seção de Dados e Registros -->
+                <div>
+                    <h2 class="text-sm font-bold uppercase text-gray-500 mb-3 tracking-wider">Dados e Registros</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-sm">
+                        <div onclick="showAdminView('captures-manager')" class="p-5 bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow cursor-pointer group">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-3 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                            <h2 class="text-lg font-bold text-gray-800 mb-1">Gerenciar Captações</h2>
+                            <p class="text-gray-600 mb-3">Visualizar, editar ou excluir todas as captações do sistema.</p>
+                            <span class="font-semibold text-orange-600 group-hover:text-orange-800 group-hover:translate-x-1 transition-transform inline-block">Acessar &rarr;</span>
+                        </div>
+                        <div onclick="showAdminView('backup-manager')" class="p-5 bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow cursor-pointer group">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                            <h2 class="text-lg font-bold text-gray-800 mb-1">Backup e Restauração</h2>
+                            <p class="text-gray-600 mb-3">Gerar e restaurar um arquivo com todos os dados do sistema.</p>
+                            <span class="font-semibold text-gray-600 group-hover:text-gray-800 group-hover:translate-x-1 transition-transform inline-block">Acessar &rarr;</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seção de Conteúdo e Comunicação -->
+                <div>
+                    <h2 class="text-sm font-bold uppercase text-gray-500 mb-3 tracking-wider">Conteúdo e Comunicação</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-sm">
+                        <div onclick="showAdminView('notices-manager')" class="p-5 bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow cursor-pointer group">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-3 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <h2 class="text-lg font-bold text-gray-800 mb-1">Gerenciar Recados</h2>
+                            <p class="text-gray-600 mb-3">Publicar recados para a tela inicial dos corretores.</p>
+                            <span class="font-semibold text-orange-600 group-hover:text-orange-800 group-hover:translate-x-1 transition-transform inline-block">Acessar &rarr;</span>
+                        </div>
+                        <div onclick="showAdminView('feedback-viewer')" class="p-5 bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow cursor-pointer group">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-3 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                            <h2 class="text-lg font-bold text-gray-800 mb-1">Ver Sugestões</h2>
+                            <p class="text-gray-600 mb-3">Ler as sugestões e reclamações enviadas pelos corretores.</p>
+                            <span class="font-semibold text-orange-600 group-hover:text-orange-800 group-hover:translate-x-1 transition-transform inline-block">Ver Mensagens &rarr;</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seção de Usuários e Segurança -->
+                <div>
+                    <h2 class="text-sm font-bold uppercase text-gray-500 mb-3 tracking-wider">Usuários e Segurança</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-sm">
+                        <div onclick="showAdminView('users-manager')" class="p-5 bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow cursor-pointer group">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-3 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 012-2h2a2 2 0 012 2v1m-6 0h6" /></svg>
+                            <h2 class="text-lg font-bold text-gray-800 mb-1">Configurar Usuários</h2>
+                            <p class="text-gray-600 mb-3">Atribuir nomes aos e-mails dos corretores para exibição.</p>
+                            <span class="font-semibold text-blue-600 group-hover:text-blue-800 group-hover:translate-x-1 transition-transform inline-block">Configurar &rarr;</span>
+                        </div>
+                        <div onclick="showAdminView('access-monitor')" class="p-5 bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow cursor-pointer group">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-3 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            <h2 class="text-lg font-bold text-gray-800 mb-1">Monitor de Acesso</h2>
+                            <p class="text-gray-600 mb-3">Verificar o último acesso de cada corretor ao sistema.</p>
+                            <span class="font-semibold text-blue-600 group-hover:text-blue-800 group-hover:translate-x-1 transition-transform inline-block">Ver Acessos &rarr;</span>
+                        </div>
+                        <div onclick="showAdminView('audit-viewer')" class="p-5 bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow cursor-pointer group">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-3 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                            <h2 class="text-lg font-bold text-gray-800 mb-1">Auditoria de Ações</h2>
+                            <p class="text-gray-600 mb-3">Visualizar logs de atividades importantes dos usuários.</p>
+                            <span class="font-semibold text-blue-600 group-hover:text-blue-800 group-hover:translate-x-1 transition-transform inline-block">Ver Logs &rarr;</span>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- GERENCIADOR DE RECADOS -->
+        <div id="notices-manager" class="hidden admin-view bg-white rounded-2xl shadow-lg p-4 sm:p-8">
+            <header class="flex justify-between items-center mb-8">
+                <h1 class="text-2xl font-bold text-gray-800">Gerenciar Recados</h1>
+                <button onclick="showAdminView('admin-panel')" class="text-sm font-medium text-gray-600 hover:text-orange-600 flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" /></svg>
+                    Voltar ao Painel
+                </button>
+            </header>
+            <div class="mb-6">
+                <label for="new-notice-text" class="block text-sm font-medium text-gray-700 mb-1">Novo Recado:</label>
+                <textarea id="new-notice-text" rows="3" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500" placeholder="Digite o recado para todos os corretores..."></textarea>
+                <button onclick="publishNotice()" class="mt-2 px-4 py-2 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700">Publicar Recado</button>
+            </div>
+            <div>
+                <h2 class="text-lg font-semibold text-gray-700 mb-2">Recados Atuais:</h2>
+                <div id="notices-list" class="space-y-3">
+                    <p class="text-gray-500 animate-pulse">Carregando recados...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- VISUALIZADOR DE FEEDBACK -->
+        <div id="feedback-viewer" class="hidden admin-view bg-white rounded-2xl shadow-lg p-4 sm:p-8">
+            <header class="flex justify-between items-center mb-8">
+                <h1 class="text-2xl font-bold text-gray-800">Sugestões e Reclamações</h1>
+                <button onclick="showAdminView('admin-panel')" class="text-sm font-medium text-gray-600 hover:text-orange-600 flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" /></svg>
+                    Voltar ao Painel
+                </button>
+            </header>
+            <div id="feedback-list" class="space-y-4">
+                <p class="text-gray-500 animate-pulse">Carregando mensagens...</p>
+            </div>
+        </div>
+
+        <!-- GERENCIADOR DE CAPTAÇÕES -->
+        <div id="captures-manager" class="hidden admin-view bg-white rounded-2xl shadow-lg p-4 sm:p-8">
+            <header class="flex justify-between items-center mb-8">
+                <h1 class="text-2xl font-bold text-gray-800">Gerenciar Todas as Captações</h1>
+                <button onclick="showAdminView('admin-panel')" class="text-sm font-medium text-gray-600 hover:text-orange-600 flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" /></svg>
+                    Voltar ao Painel
+                </button>
+            </header>
+            <div id="all-captures-list" class="space-y-4"></div>
+        </div>
+
+        <!-- VISUALIZADOR DE AUDITORIA -->
+        <div id="audit-viewer" class="hidden admin-view bg-white rounded-2xl shadow-lg p-4 sm:p-8">
+            <header class="flex justify-between items-center mb-8">
+                <h1 class="text-2xl font-bold text-gray-800">Auditoria de Ações</h1>
+                <button onclick="showAdminView('admin-panel')" class="text-sm font-medium text-gray-600 hover:text-orange-600 flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" /></svg>
+                    Voltar ao Painel
+                </button>
+            </header>
+            <div id="audit-log-list" class="space-y-2"></div>
+        </div>
+
+        <!-- MONITOR DE ACESSO -->
+        <div id="access-monitor" class="hidden admin-view bg-white rounded-2xl shadow-lg p-4 sm:p-8">
+            <header class="flex justify-between items-center mb-8">
+                <h1 class="text-2xl font-bold text-gray-800">Monitor de Acesso dos Corretores</h1>
+                <button onclick="showAdminView('admin-panel')" class="text-sm font-medium text-gray-600 hover:text-orange-600 flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" /></svg>
+                    Voltar ao Painel
+                </button>
+            </header>
+            <div id="user-access-list" class="space-y-3"></div>
+        </div>
+
+        <!-- GERENCIADOR DE USUÁRIOS -->
+        <div id="users-manager" class="hidden admin-view bg-white rounded-2xl shadow-lg p-4 sm:p-8">
+            <header class="flex justify-between items-center mb-8">
+                <h1 class="text-2xl font-bold text-gray-800">Configurar Nomes de Usuários</h1>
+                <button onclick="showAdminView('admin-panel')" class="text-sm font-medium text-gray-600 hover:text-orange-600 flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" /></svg>
+                    Voltar ao Painel
+                </button>
+            </header>
+            <div id="users-config-list" class="space-y-3"></div>
+        </div>
+
+        <!-- BACKUP DE DADOS -->
+        <div id="backup-manager" class="hidden admin-view bg-white rounded-2xl shadow-lg p-4 sm:p-8 text-center">
+            <header class="flex justify-between items-center mb-8">
+                <h1 class="text-2xl font-bold text-gray-800">Backup e Restauração</h1>
+                <button onclick="showAdminView('admin-panel')" class="text-sm font-medium text-gray-600 hover:text-orange-600 flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" /></svg>
+                    Voltar ao Painel
+                </button>
+            </header>
+            <div class="max-w-md mx-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                <h3 class="text-lg font-semibold text-gray-800">Download de Backup</h3>
+                <p class="text-gray-600 mb-6">Clique no botão abaixo para iniciar o download de um arquivo JSON contendo todos os dados das coleções: captações, avisos, feedback e usuários.</p>
+                <button id="btn-create-backup" onclick="createBackup()" class="px-6 py-3 bg-gray-700 text-white font-semibold rounded-lg hover:bg-gray-800 flex items-center justify-center gap-2 w-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                    Gerar e Baixar Backup
+                </button>
+
+                <div class="my-10 border-t pt-10">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                    <h3 class="text-lg font-semibold text-gray-800">Restauração de Backup</h3>
+                    <p class="text-gray-600 mb-4">Selecione um arquivo de backup (.json) para restaurar os dados. Os registros existentes serão atualizados e os novos serão adicionados, sem duplicar.</p>
+                    <input type="file" id="backup-file-input" accept=".json" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"/>
+                    <button id="btn-upload-backup" onclick="uploadBackup()" class="mt-4 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2 w-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
+                        Iniciar Restauração
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 text-xs text-gray-500 flex flex-wrap justify-center sm:justify-between items-center gap-x-4 gap-y-2 text-center sm:text-left">
+        <span class="font-medium text-gray-700">Painel Administrativo</span>
+        <div class="flex items-center gap-4">
+            <a href="home.html" class="font-semibold text-gray-500 hover:underline">Voltar para Home</a>
+            <span class="flex items-center gap-1.5" title="Status da Conexão com o Firebase">
+                <span class="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+                <span class="font-semibold text-green-600">Conectado</span>
+            </span>
+            <span id="firebase-counter-wrapper" class="hidden items-center gap-1" title="Leituras / Escritas no Firestore (Admin)">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-gray-500">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-gray-500">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
+                </svg>
+                <span id="firebase-counter-display" class="font-semibold text-gray-700">0/0</span>
+            </span>
+            <span class="text-gray-400 font-mono">1.0 beta</span>
+        </div>
+    </footer>
+
+    <script>
+        const adminEmail = "gui.mont0ani@gmail.com";
+
+        // ATENÇÃO: Substitua com a configuração do seu projeto Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAvqL_ESrGNMsMxlKt4Iwen_fBRZ4e_y58",
+            authDomain: "captafacil-6cf54.firebaseapp.com",
+            projectId: "captafacil-6cf54",
+            storageBucket: "captafacil-6cf54.firebasestorage.app",
+            messagingSenderId: "398747051095",
+            appId: "1:398747051095:web:68e8bf8c01988c045eef12"
+        };
+        // measurementId: "G-HTGSNFZH3G" // Não é necessário para o funcionamento básico
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let alertCallback = null;
+        function showAlert(message, title="Atenção", callback) {
+            document.getElementById('alert-title').innerText = title;
+            document.getElementById('alert-message').innerText = message;
+            document.getElementById('custom-alert').style.display = 'flex';
+            alertCallback = callback;
+        }
+
+        function closeAlert() {
+            document.getElementById('custom-alert').style.display = 'none';
+            if (typeof alertCallback === 'function') {
+                alertCallback();
+            }
+            alertCallback = null;
+        }
+
+        let confirmCallback = null;
+        let isInactiveLogout = false; // Flag for inactivity logout
+        let inactivityTimer;
+
+        // Custom Confirm Logic
+        function showConfirm(message, title, callback) {
+            document.getElementById('confirm-title').innerText = title;
+            document.getElementById('confirm-message').innerText = message;
+            document.getElementById('custom-confirm').classList.remove('hidden');
+            confirmCallback = callback;
+        }
+
+        function closeConfirm(confirmed) {
+            document.getElementById('custom-confirm').classList.add('hidden');
+            if (confirmed && typeof confirmCallback === 'function') {
+                confirmCallback();
+            }
+            confirmCallback = null;
+        }
+
+        function logoutInactiveUser() {
+            isInactiveLogout = true;
+            logActivity('LOGOUT_INACTIVITY').then(() => {
+                auth.signOut();
+            });
+        }
+
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(logoutInactiveUser, 10 * 60 * 1000); // 10 minutos
+        }
+
+        let currentUser = null; // Declare currentUser for admin.html as well
+
+
+        // New function for admin-specific user details fetching and setup check
+        async function fetchUserDetailsAdmin(user) {
+            try {
+                const userRef = db.collection('users').doc(user.uid);
+                const doc = await userRef.get();
+                reads++;
+                updateCounters();
+
+                if (!doc.exists || !doc.data().setup_completed) {
+                    // If admin user hasn't completed setup, redirect to setup page
+                    showAlert('Por favor, complete a configuração inicial da sua conta.', 'Configuração Pendente', () => {
+                        window.location.href = 'setup.html';
+                    });
+                    return;
+                }
+                // If setup is completed, proceed with admin panel initialization
+                initializeAppAdmin(user);
+            } catch (error) {
+                console.error("Erro ao buscar detalhes do usuário admin:", error);
+                showAlert('Ocorreu um erro ao verificar os detalhes do seu usuário. Tente novamente.', 'Erro de Verificação', () => {
+                auth.signOut(); // Force logout on error
+                });
+            }
+        }
+
+        function initializeAppAdmin(user) {
+            currentUser = user; // Set currentUser for admin.html
+            const counterWrapper = document.getElementById('firebase-counter-wrapper');
+            if (counterWrapper) {
+                counterWrapper.classList.remove('hidden');
+                counterWrapper.classList.add('flex');
+            }
+            showAdminView('admin-panel');
+
+            // Add listeners for the confirmation modal
+            resetInactivityTimer();
+            ['click', 'keypress', 'mousemove', 'scroll'].forEach(event => {
+                window.addEventListener(event, resetInactivityTimer);
+            });
+
+            document.getElementById('confirm-btn-yes').addEventListener('click', () => closeConfirm(true));
+            document.getElementById('confirm-btn-no').addEventListener('click', () => closeConfirm(false));
+        }
+
+        // Lógica do contador persistente
+        let reads = parseInt(sessionStorage.getItem('firebaseReads')) || 0;
+        let writes = parseInt(sessionStorage.getItem('firebaseWrites')) || 0;
+        function updateCounters() {
+            sessionStorage.setItem('firebaseReads', reads);
+            sessionStorage.setItem('firebaseWrites', writes);
+            document.getElementById('firebase-counter-display').innerText = `${reads}/${writes}`;
+        }
+        let noticesListener = null;
+        let feedbackListener = null;
+        let capturesListener = null;
+        let auditListener = null;
+        let accessListener = null;
+        let usersListener = null;
+
+        function showAdminView(viewId) {
+            // Desanexa todos os listeners para garantir que os dados sejam carregados apenas para a visualização ativa
+            if (noticesListener) { noticesListener(); noticesListener = null; }
+            if (feedbackListener) { feedbackListener(); feedbackListener = null; }
+            if (capturesListener) { capturesListener(); capturesListener = null; }
+            if (auditListener) { auditListener(); auditListener = null; }
+            if (accessListener) { accessListener(); accessListener = null; }
+            if (usersListener) { usersListener(); usersListener = null; }
+
+            document.querySelectorAll('.admin-view').forEach(v => v.classList.add('hidden'));
+            document.getElementById(viewId).classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // Carrega os dados para a visualização selecionada
+            if (viewId === 'notices-manager') loadNotices();
+            if (viewId === 'feedback-viewer') loadFeedback();
+            if (viewId === 'captures-manager') loadAllCaptures();
+            if (viewId === 'audit-viewer') loadAuditLogs();
+            if (viewId === 'access-monitor') loadUserAccess();
+            if (viewId === 'users-manager') loadUsersForConfig();
+            if (viewId === 'backup-manager') logActivity('BACKUP_PAGE_VIEWED');
+
+        }
+
+        async function publishNotice() {
+            const text = document.getElementById('new-notice-text').value;
+            if (!text.trim()) {
+                showAlert('O recado não pode estar vazio.', 'Campo Vazio');
+                return;
+            }
+            try {
+                resetInactivityTimer();
+                await db.collection('avisos').add({
+                    text: text,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                document.getElementById('new-notice-text').value = '';
+                writes++;
+                updateCounters();
+                logActivity('NOTICE_PUBLISHED', { text: text.substring(0, 50) });
+                loadNotices();
+            } catch (error) {
+                showAlert('Falha ao publicar o aviso.', 'Erro');
+            }
+        }
+
+        async function loadNotices() {
+            const listEl = document.getElementById('notices-list');
+
+            noticesListener = db.collection('avisos').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
+                reads++;
+                updateCounters();
+                if (snapshot.empty) {
+                    listEl.innerHTML = '<p class="text-gray-500">Nenhum recado publicado.</p>';
+                    return;
+                }
+                listEl.innerHTML = ''; // Limpa para redesenhar
+                let html = '';
+                snapshot.forEach(doc => {
+                    const notice = doc.data();
+                    const date = new Date(notice.createdAt.seconds * 1000).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                    html += `
+                        <div class="p-3 bg-gray-50 rounded-lg flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-800">${notice.text}</p>
+                                <p class="text-xs text-gray-500 mt-1">Publicado em: ${date}</p>
+                            </div>
+                            <button onclick="deleteNotice('${doc.id}')" class="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-100">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+                            </button>
+                        </div>
+                    `;
+                });
+                listEl.innerHTML = html;
+            }, error => {
+                console.error("Erro ao carregar avisos:", error);
+                listEl.innerHTML = '<p class="text-red-500">Falha ao carregar recados.</p>';
+                noticesListener = null;
+            });
+        }
+
+        async function deleteNotice(id) {
+            showConfirm('Tem certeza que deseja apagar este recado?', 'Confirmar Exclusão', async () => { // Using custom confirm
+                try {
+                    resetInactivityTimer();
+                    await db.collection('avisos').doc(id).delete();
+                    writes++;
+                    updateCounters();
+                    logActivity('NOTICE_DELETED', { noticeId: id });
+                } catch (error) {
+                    showAlert('Falha ao apagar o recado.', 'Erro');
+                }
+            });
+        }
+
+        async function loadFeedback() {
+            const listEl = document.getElementById('feedback-list');
+
+            feedbackListener = db.collection('feedback').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
+                reads++;
+                updateCounters();
+                if (snapshot.empty) {
+                    listEl.innerHTML = '<p class="text-gray-500">Nenhuma sugestão ou reclamação encontrada.</p>';
+                    return;
+                }
+                listEl.innerHTML = '';
+                let html = '';
+                snapshot.forEach(doc => {
+                    const msg = doc.data();
+                    const date = new Date(msg.createdAt.seconds * 1000).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                    html += `
+                        <div class="p-4 border rounded-lg bg-gray-50">
+                            <p class="text-gray-800 whitespace-pre-wrap">${msg.message}</p>
+                            <div class="text-xs text-gray-500 mt-3 pt-2 border-t">
+                                Enviado por: <strong class="text-gray-700">${msg.userEmail}</strong> em ${date}
+                            </div>
+                        </div>
+                    `;
+                });
+                listEl.innerHTML = html;
+            }, error => {
+                console.error("Erro ao carregar feedback:", error);
+                showAlert('Falha ao carregar mensagens.', 'Erro');
+                feedbackListener = null;
+            });
+        }
+
+        async function loadAllCaptures() {
+            const listEl = document.getElementById('all-captures-list');
+
+            capturesListener = db.collection('captacoes').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
+                reads++;
+                updateCounters();
+                if (snapshot.empty) {
+                    listEl.innerHTML = '<p class="text-gray-500">Nenhuma captação encontrada no sistema.</p>';
+                    return;
+                }
+                listEl.innerHTML = '';
+                let html = '';
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const date = new Date(data.createdAt.seconds * 1000).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                    html += `
+                        <div class="p-4 border rounded-lg bg-gray-50 text-sm">
+                            <div class="flex flex-wrap justify-between items-start gap-2">
+                                <div>
+                                    <p class="font-bold text-gray-800">${data.imovelTipo || 'Imóvel'} - ${data.imovelEndereco || 'Endereço não informado'}</p>
+                                    <p class="text-gray-600">Proprietário: <span class="font-medium">${data.propNome || 'N/A'}</span></p>
+                                    <p class="text-gray-600">Corretor: <span class="font-medium">${data.owner_email}</span></p>
+                                    <p class="text-xs text-gray-500">Cadastrado em: ${date}</p>
+                                </div>
+                                <div class="flex gap-2 shrink-0">
+                                    <button onclick="editCapture('${doc.id}')" class="px-3 py-1 bg-blue-500 text-white font-semibold rounded hover:bg-blue-600">Editar</button>
+                                    <button onclick="deleteCapture('${doc.id}')" class="px-3 py-1 bg-red-500 text-white font-semibold rounded hover:bg-red-600">Excluir</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                listEl.innerHTML = html;
+            }, error => {
+                console.error("Erro ao carregar captações:", error);
+                showAlert('Falha ao carregar captações.', 'Erro');
+                capturesListener = null;
+            });
+        }
+
+        function editCapture(id) {
+            logActivity('CAPTURE_EDIT_ATTEMPT', { captureId: id });
+            window.open(`home.html?edit=${id}`, '_blank');
+        }
+
+        async function deleteCapture(id) {
+            showConfirm('Tem certeza que deseja EXCLUIR permanentemente esta captação? Esta ação não pode ser desfeita.', 'Confirmar Exclusão Permanente', async () => {
+                try {
+                    resetInactivityTimer();
+                    await db.collection('captacoes').doc(id).delete();
+                    writes++;
+                    updateCounters();
+                    logActivity('CAPTURE_DELETED', { captureId: id });
+                } catch (error) {
+                    showAlert('Falha ao excluir a captação.', 'Erro');
+                }
+            });
+        }
+
+        const auditActionMap = {
+            'LOGIN': { title: 'Login no Sistema', color: 'blue' },
+            'LOGOUT': { title: 'Logout Voluntário', color: 'gray' },
+            'LOGOUT_INACTIVITY': { title: 'Logout por Inatividade', color: 'yellow' },
+            'CAPTURE_CREATED': { title: 'Nova Captação Criada', color: 'green' },
+            'CAPTURE_UPDATED': { title: 'Captação Atualizada', color: 'blue' },
+            'CAPTURE_DELETED': { title: 'Captação Excluída', color: 'red' },
+            'CAPTURE_EDIT_ATTEMPT': { title: 'Tentativa de Edição', color: 'yellow' },
+            'PDF_GENERATED_FROM_FORM': { title: 'PDF Gerado (Formulário)', color: 'gray' },
+            'PDF_GENERATED_FROM_HISTORY': { title: 'PDF Gerado (Histórico)', color: 'gray' },
+            'NOTICE_PUBLISHED': { title: 'Recado Publicado', color: 'green' },
+            'NOTICE_DELETED': { title: 'Recado Excluído', color: 'red' },
+            'FEEDBACK_SENT': { title: 'Feedback Enviado', color: 'blue' },
+            'USER_DETAILS_UPDATED': { title: 'Dados de Usuário Atualizados', color: 'blue' },
+            'BACKUP_PAGE_VIEWED': { title: 'Página de Backup Acessada', color: 'gray' },
+            'BACKUP_CREATED': { title: 'Backup Gerado', color: 'green' },
+            'BACKUP_RESTORED': { title: 'Backup Restaurado', color: 'red' },
+        };
+
+        const colorClasses = {
+            blue: 'bg-blue-100 text-blue-800',
+            green: 'bg-green-100 text-green-800',
+            red: 'bg-red-100 text-red-800',
+            yellow: 'bg-yellow-100 text-yellow-800',
+            gray: 'bg-gray-100 text-gray-800',
+        };
+
+
+        async function loadAuditLogs() {
+            const listEl = document.getElementById('audit-log-list');
+
+            auditListener = db.collection('audit_logs').orderBy('timestamp', 'desc').limit(100).onSnapshot(snapshot => {
+                reads++;
+                updateCounters();
+                if (snapshot.empty) {
+                    listEl.innerHTML = '<p class="text-gray-500">Nenhum log de auditoria encontrado.</p>';
+                    return;
+                }
+                listEl.innerHTML = '';
+                let html = '';
+                snapshot.forEach(doc => {
+                    const log = doc.data();
+                    const actionInfo = auditActionMap[log.action] || { title: log.action, color: 'gray' };
+                    const badgeColor = colorClasses[actionInfo.color];
+                    const date = new Date(log.timestamp.seconds * 1000).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                    let detailsHtml = '';
+                    if (log.details && Object.keys(log.details).length > 0) {
+                        detailsHtml = `<div class="text-gray-500 mt-1 pl-4 border-l-2 border-gray-200 text-xs">${Object.entries(log.details).map(([key, value]) => `<strong>${key}:</strong> ${String(value).substring(0, 100)}`).join('<br>')}</div>`;
+                    }
+                    html += `
+                        <div class="p-3 border-b text-sm">
+                            <p>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badgeColor}">${actionInfo.title}</span>
+                                <span class="text-gray-600">por</span> <span class="font-medium text-gray-800">${log.userEmail}</span> <span class="text-gray-600">em ${date}</span>
+                            </p>
+                            ${detailsHtml}
+                        </div>
+                    `;
+                });
+                listEl.innerHTML = html;
+            }, error => {
+                console.error("Erro ao carregar auditoria:", error);
+                showAlert('Falha ao carregar logs.', 'Erro');
+                auditListener = null;
+            });
+        }
+
+        async function loadUserAccess() {
+            const listEl = document.getElementById('user-access-list');
+
+            accessListener = db.collection('users').orderBy('last_seen', 'desc').onSnapshot(snapshot => {
+                reads++;
+                updateCounters();
+                if (snapshot.empty) {
+                    listEl.innerHTML = '<p class="text-gray-500">Nenhum usuário encontrado.</p>';
+                    return;
+                }
+                listEl.innerHTML = '';
+                let html = '';
+                snapshot.forEach(doc => {
+                    const user = doc.data();
+                    const date = user.last_seen ? new Date(user.last_seen.seconds * 1000).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'Nunca';
+                    const equipeBadge = user.equipe ? `<span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">${user.equipe}</span>` : '';
+                    html += `
+                        <div class="p-3 bg-gray-50 rounded-lg">
+                            <p class="font-medium text-gray-800">${user.nome ? `${user.nome} ${user.sobrenome}` : 'Nome não definido'} ${equipeBadge}</p>
+                            <p class="text-sm text-gray-600">${user.email}</p>
+                            <p class="text-xs text-gray-500 mt-1">Último acesso em: ${date}</p>
+                        </div>
+                    `;
+                });
+                listEl.innerHTML = html;
+            }, error => {
+                console.error("Erro ao carregar acessos:", error);
+                showAlert('Falha ao carregar acessos.', 'Erro');
+                accessListener = null;
+            });
+        }
+
+        async function loadUsersForConfig() {
+            const listEl = document.getElementById('users-config-list');
+
+            usersListener = db.collection('users').orderBy('email').onSnapshot(snapshot => {
+                reads++;
+                updateCounters();
+                if (snapshot.empty) {
+                    listEl.innerHTML = '<p class="text-gray-500">Nenhum usuário para configurar.</p>';
+                    return;
+                }
+                listEl.innerHTML = '';
+                let html = '';
+                snapshot.forEach(doc => {
+                    const user = doc.data();
+                    html += `
+                        <div class="p-4 bg-gray-50 rounded-lg border">
+                            <p class="font-semibold text-gray-800">${user.email}</p>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-3 text-sm">
+                                <div>
+                                    <label for="nome-${doc.id}" class="text-xs font-medium text-gray-500">Nome</label>
+                                    <input type="text" id="nome-${doc.id}" class="w-full px-2 py-1 border rounded-md" value="${user.nome || ''}">
+                                </div>
+                                <div>
+                                    <label for="sobrenome-${doc.id}" class="text-xs font-medium text-gray-500">Sobrenome</label>
+                                    <input type="text" id="sobrenome-${doc.id}" class="w-full px-2 py-1 border rounded-md" value="${user.sobrenome || ''}">
+                                </div>
+                                <div>
+                                    <label for="dataNascimento-${doc.id}" class="text-xs font-medium text-gray-500">Data de Nascimento</label>
+                                    <input type="date" id="dataNascimento-${doc.id}" class="w-full px-2 py-1 border rounded-md" value="${user.dataNascimento || ''}">
+                                </div>
+                                <div>
+                                    <label for="equipe-${doc.id}" class="text-xs font-medium text-gray-500">Equipe</label>
+                                    <select id="equipe-${doc.id}" class="w-full px-2 py-1 border rounded-md bg-white">
+                                        <option value="Locação" ${user.equipe === 'Locação' ? 'selected' : ''}>Locação</option>
+                                        <option value="Lançamento" ${user.equipe === 'Lançamento' ? 'selected' : ''}>Lançamento</option>
+                                        <option value="Terceiro" ${user.equipe === 'Terceiro' ? 'selected' : ''}>Terceiro</option>
+                                        <option value="Administrativo" ${user.equipe === 'Administrativo' ? 'selected' : ''}>Administrativo</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="text-right mt-3">
+                                <button onclick="saveUserDetails('${doc.id}')" class="px-4 py-1.5 bg-blue-500 text-white text-sm font-semibold rounded-lg hover:bg-blue-600">Salvar Alterações</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                listEl.innerHTML = html;
+            }, error => {
+                console.error("Erro ao carregar usuários:", error);
+                showAlert('Falha ao carregar usuários.', 'Erro');
+                usersListener = null;
+            });
+        }
+
+        async function saveUserDetails(uid) {
+            const updatedData = {
+                nome: document.getElementById(`nome-${uid}`).value,
+                sobrenome: document.getElementById(`sobrenome-${uid}`).value,
+                dataNascimento: document.getElementById(`dataNascimento-${uid}`).value,
+                equipe: document.getElementById(`equipe-${uid}`).value,
+            };
+
+            try {
+                resetInactivityTimer();
+                await db.collection('users').doc(uid).update(updatedData);
+                writes++;
+                updateCounters();
+                logActivity('USER_DETAILS_UPDATED', { userId: uid, ...updatedData });
+                showAlert('Dados do usuário atualizados com sucesso!', 'Sucesso');
+            } catch (error) {
+                console.error("Erro ao salvar dados do usuário:", error);
+                showAlert('Falha ao salvar os dados.', 'Erro');
+            }
+        }
+
+        async function uploadBackup() {
+            const fileInput = document.getElementById('backup-file-input');
+            const file = fileInput.files[0];
+            if (!file) {
+                showAlert('Por favor, selecione um arquivo de backup (.json) primeiro.', 'Arquivo Ausente');
+                return;
+            }
+
+            const btn = document.getElementById('btn-upload-backup');
+            const originalBtnHtml = btn.innerHTML;
+
+            const reader = new FileReader();
+            reader.onload = async function(event) {
+                try {
+                    const backupData = JSON.parse(event.target.result);
+                    const collections = Object.keys(backupData);
+
+                    showConfirm(`Você está prestes a restaurar dados para as seguintes coleções: ${collections.join(', ')}. Os dados existentes serão sobrescritos e os novos serão adicionados, sem duplicar. Deseja continuar?`,
+                        'Confirmar Restauração de Backup',
+                        async () => {
+                            resetInactivityTimer();
+
+                            btn.disabled = true;
+                            btn.innerText = 'Restaurando...';
+
+                            try {
+                                let totalWrites = 0;
+                                for (const collectionName of collections) {
+                                    if (Array.isArray(backupData[collectionName])) {
+                                        const collectionData = backupData[collectionName];
+                                        for (const doc of collectionData) {
+                                            if (doc.id) {
+                                                const docRef = db.collection(collectionName).doc(doc.id);
+                                                const { id, ...docData } = doc;
+                                                Object.keys(docData).forEach(key => {
+                                                    if (docData[key] && typeof docData[key] === 'object' && docData[key].seconds !== undefined) {
+                                                        docData[key] = new firebase.firestore.Timestamp(docData[key].seconds, docData[key].nanoseconds);
+                                                    }
+                                                });
+                                                await docRef.set(docData, { merge: true });
+                                                writes++;
+                                                totalWrites++;
+                                            }
+                                        }
+                                    }
+                                }
+                                logActivity('BACKUP_RESTORED', { collections: collections, records: totalWrites });
+                                updateCounters();
+                                showAlert(`Restauração concluída com sucesso! ${totalWrites} registros foram processados.`, 'Sucesso');
+                            } catch (error) {
+                                showAlert('Falha ao restaurar o backup. Verifique o console para mais detalhes.', 'Erro de Restauração');
+                            } finally {
+                                btn.disabled = false;
+                                btn.innerHTML = originalBtnHtml;
+                                fileInput.value = '';
+                            }
+                        }
+                    );
+
+                } catch (error) {
+                    showAlert('Falha ao restaurar o backup. Verifique o console para mais detalhes e se o arquivo é um JSON válido.', 'Erro de Restauração');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        async function createBackup() {
+            const btn = document.getElementById('btn-create-backup');
+            btn.disabled = true;
+            btn.innerText = 'Gerando...';
+
+            try {
+                resetInactivityTimer();
+                const collectionsToBackup = ['captacoes', 'avisos', 'feedback', 'users', 'audit_logs'];
+                const backupData = {};
+
+                for (const collectionName of collectionsToBackup) {
+                    const snapshot = await db.collection(collectionName).get();
+                    reads++;
+                    backupData[collectionName] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                }
+
+                updateCounters();
+                const jsonString = JSON.stringify(backupData, null, 2);
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                const date = new Date().toISOString().slice(0, 10);
+                a.download = `backup-captafacil-${date}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                logActivity('BACKUP_CREATED');
+                showAlert('Backup gerado com sucesso!', 'Sucesso');
+
+            } catch (error) {
+                showAlert('Falha ao criar o backup.', 'Erro');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg> Gerar e Baixar Backup';
+            }
+        }
+
+        async function logActivity(action, details = {}) {
+            try {
+                await db.collection('audit_logs').add({
+                    action: action,
+                    userEmail: auth.currentUser.email,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    details: details
+                });
+                writes++;
+                updateCounters();
+            } catch (error) {
+                console.error('Error writing to audit log:', error);
+            }
+        }
+
+        auth.onAuthStateChanged(function(user) {
+            if (user) {
+                updateCounters(); // Exibe o contador persistido ao carregar a página
+                if (user.email === adminEmail) {
+                    fetchUserDetailsAdmin(user); // Call new function to check setup
+                } else {
+                    // Usuário não é admin, redireciona para a home
+                    showAlert('Acesso negado. Você não tem permissão para acessar esta página.', 'Acesso Negado', () => {
+                        window.location.href = 'home.html';
+                    });
+                }
+            } else {
+                // Usuário não está logado, redireciona para o login
+                if (isInactiveLogout) { // Check if logout was due to inactivity
+                    isInactiveLogout = false; // Reset flag
+                    showAlert('Você foi desconectado por inatividade.', 'Sessão Expirada', () => { window.location.href = 'login.html'; });
+                } else { window.location.href = 'login.html'; }
+            }
+        });
+    </script>
+</body>
+</html>
