@@ -609,8 +609,8 @@
         }
 
         function editCapture(id) {
-            logActivity('CAPTURE_EDIT_ATTEMPT', { captureId: id });
-            window.open(`home.html?edit=${id}`, '_blank');
+            logActivity('CAPTURE_EDIT_ATTEMPT', { captureId: id }); //
+            window.open(`form.html?edit=${id}`, '_blank'); //
         }
 
         async function deleteCapture(id) {
