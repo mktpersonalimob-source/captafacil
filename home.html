@@ -1072,7 +1072,7 @@
         
             let specialMessage = '';
             // Check for the first three Tuesdays of the month
-            if (dayOfWeek === 2 && dayOfMonth <= 21) {
+            if (dayOfWeek === 2 && dayOfMonth <= 21 && userData && userData.team === 'Locação') {
                 specialMessage = 'Hoje é dia de entregar as fichas de captação!';
             }
             // Use the passed userName directly, with a fallback
