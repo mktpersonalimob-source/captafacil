@@ -35,6 +35,7 @@
             background-size: cover;
             background-position: center;
             z-index: -1; /* Coloca o fundo atrás de todo o conteúdo */
+            padding-bottom: 70px; /* Espaço para o rodapé fixo */
         }
         
         /* Oculta as views e etapas que não estão ativas */
@@ -360,7 +361,7 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <!-- Coluna da Esquerda: Captações e Recados -->
                 <div class="lg:col-span-2 space-y-6">
-                    <div>
+                    <div class="hidden sm:block">
                         <h3 class="text-xl font-bold text-gray-800 mb-4">Captações recentes</h3>
                         <div id="recent-captures-display" class="space-y-4">
                             <p class="text-gray-500 animate-pulse">Carregando captações recentes...</p>
@@ -1810,17 +1811,17 @@
         }
 
         // Advanced Filter Modal Functions
-        function openAdvancedFilterModal() {
+        function openAdvancedFilterModal() { // No change needed here
             document.getElementById('advanced-filters-modal').classList.remove('hidden');
         }
-        function closeAdvancedFilterModal() {
+        function closeAdvancedFilterModal() { // No change needed here
             document.getElementById('advanced-filters-modal').classList.add('hidden');
         }
-        function applyAdvancedFilters() {
+        function applyAdvancedFilters() { // No change needed here
             applyFiltersAndSearch();
             closeAdvancedFilterModal();
         }
-        function clearAdvancedFilters() {
+        function clearAdvancedFilters() { // No change needed here
             document.getElementById('advanced-filters-form').reset();
             applyFiltersAndSearch();
             closeAdvancedFilterModal();

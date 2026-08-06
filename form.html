@@ -35,6 +35,7 @@
             background-size: cover;
             background-position: center;
             z-index: -1; /* Coloca o fundo atrás de todo o conteúdo */
+            padding-bottom: 70px; /* Espaço para o rodapé fixo */
         }
         
         /* Oculta as views e etapas que não estão ativas */
@@ -362,7 +363,7 @@
                 </header>
         
         <!-- Barra de Progresso -->
-        <div class="mb-8">
+        <div class="mb-8 sm:mb-12">
             <div class="flex items-center justify-between relative z-10">
                 <!-- Conectores -->
                 <div class="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-gray-200 -z-10 rounded-full"></div>
@@ -1764,20 +1765,20 @@
     <!-- RODAPÉ FIXO -->
     <!-- ======================================================================== -->
     <footer class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 text-xs text-gray-500 flex flex-wrap justify-center sm:justify-between items-center gap-x-4 gap-y-2 text-center sm:text-left">
-        <span id="greeting-display" class="font-medium text-gray-700">Bem-vindo(a), <strong>...</strong></span>
-        <div class="flex items-center gap-4 flex-wrap justify-center sm:justify-end">
-            <button onclick="openAboutModal()" title="Sobre o sistema" class="font-semibold text-gray-500 hover:underline">Sobre</button>
-            <a href="admin.html" id="admin-button" title="Acessar Painel Administrativo" class="hidden px-3 py-1 bg-blue-600 text-white font-bold rounded-lg shadow hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 transition-all flex items-center gap-1">
+        <span id="greeting-display" class="font-medium text-gray-700 hidden sm:block">Bem-vindo(a), <strong>...</strong></span>
+        <div class="flex items-center gap-1.5 flex-shrink-0" title="Status da Conexão com o Firebase">
+            <span class="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+            <span class="font-semibold text-green-600">Conectado</span>
+        </div>
+        <div class="flex items-center gap-x-4 gap-y-2 justify-center sm:justify-end flex-wrap hidden sm:flex">
+            <button onclick="openAboutModal()" title="Sobre o sistema" class="font-semibold text-gray-500 hover:underline hidden sm:block">Sobre</button>
+            <a href="admin.html" id="admin-button" title="Acessar Painel Administrativo" class="hidden px-3 py-1 bg-blue-600 text-white font-bold rounded-lg shadow hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 transition-all sm:flex items-center gap-1">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3m-9.75 6.75h16.5c.621 0 1.125-.504 1.125-1.125V6.625c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v10.25c0 .621.504 1.125 1.125 1.125z" />
                 </svg>
                 <span>PAINEL ADMIN</span>
             </a>
-            <span class="flex items-center gap-1.5" title="Status da Conexão com o Firebase">
-                <span class="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
-                <span class="font-semibold text-green-600">Conectado</span>
-            </span>
-            <span class="text-gray-400 font-mono">1.0 beta</span>
+            <span class="text-gray-400 font-mono hidden sm:block">1.0 beta</span>
             <button onclick="logout()" title="Sair do sistema" class="px-3 py-1 bg-red-500 text-white font-semibold rounded-lg shadow hover:bg-red-600 focus:ring-2 focus:ring-red-500 transition-all flex items-center gap-1">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
