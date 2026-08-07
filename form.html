@@ -682,11 +682,23 @@
                         </div>
                         <div id="valor-iptu-wrapper">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Valor do IPTU Anual (R$) *</label>
-                            <input type="text" id="valor-iptu" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500 shadow-sm" placeholder="R$ 0,00">
+                            <div class="flex items-center">
+                                <input type="text" id="valor-iptu" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500 shadow-sm" placeholder="R$ 0,00">
+                                <label class="ml-3 flex items-center whitespace-nowrap">
+                                    <input type="checkbox" id="iptu-isento-chk" class="h-4 w-4 rounded text-orange-600 focus:ring-orange-500">
+                                    <span class="ml-2 text-sm text-gray-600">Isento</span>
+                                </label>
+                            </div>
                         </div>
                         <div id="taxa-lixo-wrapper">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Taxa do Lixo (R$) *</label>
-                            <input type="text" id="taxa-lixo" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500 shadow-sm" placeholder="R$ 0,00">
+                            <div class="flex items-center">
+                                <input type="text" id="taxa-lixo" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500 shadow-sm" placeholder="R$ 0,00">
+                                <label class="ml-3 flex items-center whitespace-nowrap">
+                                    <input type="checkbox" id="lixo-isento-chk" class="h-4 w-4 rounded text-orange-600 focus:ring-orange-500">
+                                    <span class="ml-2 text-sm text-gray-600">Isento</span>
+                                </label>
+                            </div>
                         </div>
                         <div id="taxas-aluguel-wrapper" class="hidden col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
@@ -1256,6 +1268,7 @@
             setText('.out-imovel-complemento', data.imovelComplemento, true);
             setText('.out-imovel-bairro', data.imovelBairro, true);
             setText('.out-imovel-cidade', data.imovelCidade, true);
+            setText('.out-imovel-cep', data.imovelCep);
             setText('.out-imovel-andar', data.imovelAndar);
             let chaves = data.localChaves === 'Outro' ? data.localChavesOutro : data.localChaves;
             setText('.out-local-chaves', chaves, true);
@@ -1360,6 +1373,51 @@
             }
         }
 
+        function addPhoneField(phoneValue = '', isWhatsapp = false) {
+            const container = document.getElementById('telefones-container');
+            const phoneCount = container.querySelectorAll('input[name="prop-telefone"]').length;
+            const btnAdd = document.getElementById('btn-add-telefone');
+
+            if (phoneCount >= 3) {
+                if(btnAdd) btnAdd.classList.add('hidden');
+                return;
+            }
+
+            const newIndex = phoneCount + 1;
+            const newPhoneDiv = document.createElement('div');
+            newPhoneDiv.className = 'extra-phone relative mt-3';
+            newPhoneDiv.innerHTML = `
+                <label class="block text-sm font-medium text-gray-700 mb-1">Telefone ${newIndex}</label>
+                <div class="relative">
+                    <input type="tel" name="prop-telefone" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500 shadow-sm transition-all" placeholder="(00) 00000-0000">
+                    <label class="absolute top-0 right-0 mt-2 mr-3 flex items-center text-xs text-gray-500"><input type="checkbox" name="prop-telefone-whatsapp" class="h-4 w-4 rounded text-orange-600 focus:ring-orange-500 mr-1"> É WhatsApp?</label>
+                </div>
+                <button type="button" class="btn-remove-telefone absolute -top-1 -right-1.5 h-5 w-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-bold hover:bg-red-600" title="Remover Telefone">&times;</button>
+            `;
+
+            const newPhoneInput = newPhoneDiv.querySelector('input[type="tel"]');
+            newPhoneInput.value = phoneValue;
+            maskPhone(newPhoneInput); // Apply mask immediately
+            newPhoneInput.addEventListener('input', () => maskPhone(newPhoneInput));
+
+            newPhoneDiv.querySelector('input[type="checkbox"]').checked = isWhatsapp;
+
+            newPhoneDiv.querySelector('.btn-remove-telefone').addEventListener('click', (e) => {
+                e.target.closest('.extra-phone').remove();
+                // Re-label remaining phones
+                document.querySelectorAll('#telefones-container > div').forEach((div, index) => {
+                    div.querySelector('label').innerText = `Telefone ${index + 1}`;
+                });
+                if(btnAdd) btnAdd.classList.remove('hidden');
+            });
+
+            container.appendChild(newPhoneDiv);
+
+            if (container.querySelectorAll('input[name="prop-telefone"]').length >= 3) {
+                if(btnAdd) btnAdd.classList.add('hidden');
+            }
+        }
+
         async function loadCaptureForEditing(docId) {
             document.getElementById('global-loading-spinner').style.display = 'flex';
             try {
@@ -1374,6 +1432,10 @@
                 const data = doc.data();
                 currentEditingId = docId;
 
+                // Clear dynamic fields before populating
+                document.querySelectorAll('.extra-phone').forEach(el => el.remove());
+                document.getElementById('btn-add-telefone').classList.remove('hidden');
+
                 // Populate form fields
                 // Handle date separately
                 if (data.createdAt && data.createdAt.seconds) {
@@ -1382,13 +1444,30 @@
                     document.getElementById('data-cadastro').value = data.dataCadastro;
                 }
 
+                // Handle phones manually
+                const firstPhoneInput = document.querySelector('#telefones-container input[name="prop-telefone"]');
+                const firstWhatsappInput = document.querySelector('#telefones-container input[name="prop-telefone-whatsapp"]');
+                if (data.propTelefone1) {
+                    firstPhoneInput.value = data.propTelefone1;
+                    if(firstWhatsappInput) firstWhatsappInput.checked = data.propTelefone1Whatsapp || false;
+                    maskPhone(firstPhoneInput);
+                }
+                if (data.propTelefone2) {
+                    addPhoneField(data.propTelefone2, data.propTelefone2Whatsapp || false);
+                }
+                if (data.propTelefone3) {
+                    addPhoneField(data.propTelefone3, data.propTelefone3Whatsapp || false);
+                }
+
                 Object.keys(data).forEach(key => {
+                    if (key.startsWith('propTelefone')) return; // Skip phones as they are handled above
+
                     const element = document.getElementById(key.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`));
                     if (element) {
                         if (element.type === 'checkbox') {
                             element.checked = data[key];
                         } else if (element.type === 'radio') {
-                            // This needs to be handled by name
+                            // This is handled later by name
                         } else {
                             element.value = data[key];
                         }
@@ -1428,6 +1507,25 @@
                         document.getElementById('local-chaves-outro').value = data.localChavesOutro || '';
                     }
                 }
+
+                // Handle Isento fields
+                const checkAndSetIsento = (value, chkId, inputId) => {
+                    const chk = document.getElementById(chkId);
+                    const input = document.getElementById(inputId);
+                    if (!chk || !input) return;
+                    if (value === 'Isento') {
+                        chk.checked = true;
+                        input.value = 'Isento';
+                        input.disabled = true;
+                        input.required = false;
+                    } else {
+                        chk.checked = false;
+                        input.disabled = false;
+                        input.required = true;
+                    }
+                };
+                checkAndSetIsento(data.valorIptu, 'iptu-isento-chk', 'valor-iptu');
+                checkAndSetIsento(data.taxaLixo, 'lixo-isento-chk', 'taxa-lixo');
 
                 // Trigger change handlers to show/hide conditional fields
                 updateFieldVisibility();
@@ -1500,6 +1598,27 @@
             return true;
         }
 
+        function setupIsentoCheckbox(chkId, inputId) {
+            const chk = document.getElementById(chkId);
+            const input = document.getElementById(inputId);
+            if (!chk || !input) return;
+
+            const handleCheck = () => {
+                if (chk.checked) {
+                    input.value = 'Isento';
+                    input.disabled = true;
+                    input.required = false;
+                } else {
+                    input.value = '';
+                    input.disabled = false;
+                    input.required = true;
+                    maskCurrency(input);
+                    input.focus();
+                }
+            };
+            chk.addEventListener('change', handleCheck);
+        }
+
         function setupEventListeners() {
             // Navigation
             const btnNext = document.getElementById('btn-next');
@@ -1513,6 +1632,8 @@
             document.querySelectorAll('.step-dot').forEach(dot => {
                 dot.addEventListener('click', () => goToStep(parseInt(dot.dataset.step)));
             });
+
+            document.getElementById('btn-add-telefone').addEventListener('click', () => addPhoneField());
 
             // Form Actions
             const btnRegisterCaptacao = document.getElementById('btn-register-captacao');
@@ -1631,6 +1752,9 @@
 
             // Removido: O elemento 'btn-close-about-modal' não existe em form.html
             // document.getElementById('btn-close-about-modal').addEventListener('click', () => document.getElementById('about-modal').classList.add('hidden'));
+
+            setupIsentoCheckbox('iptu-isento-chk', 'valor-iptu');
+            setupIsentoCheckbox('lixo-isento-chk', 'taxa-lixo');
         }
 
         function updateFieldVisibility() {
