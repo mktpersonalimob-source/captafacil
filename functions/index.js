@@ -35,47 +35,49 @@ exports.generateSignatureLink = functions.https.onCall(async (data, context) => 
 });
 
 /**
- * Verifica a validade de um token de assinatura.
+ * Helper function to contain the token verification logic.
+ * @param {string} captureId The ID of the capture document.
+ * @param {string} token The signature token to verify.
+ * @return {Promise<{valid: boolean, message?: string, propertyData?: object}>}
  */
-exports.verifySignatureToken = functions.https.onCall(async (data, context) => {
-    const { id, token } = data;
-
-    if (!id || !token) {
-        throw new functions.https.HttpsError("invalid-argument", "ID da captação e token são obrigatórios.");
+async function _verifyToken(captureId, token) {
+    if (!captureId || !token) {
+        return { valid: false, message: "ID da captação e token são obrigatórios." };
     }
 
-    const docRef = db.collection("captacoes").doc(id);
+    const docRef = db.collection("captacoes").doc(captureId);
     const doc = await docRef.get();
 
     if (!doc.exists) {
         return { valid: false, message: "Captação não encontrada." };
     }
-
     const docData = doc.data();
 
     if (docData.signatureImageUrl) {
         return { valid: false, message: "Este documento já foi assinado." };
     }
-
     if (docData.signatureToken !== token) {
         return { valid: false, message: "Token de assinatura inválido." };
     }
-
     if (docData.signatureTokenExpires.toDate() < new Date()) {
         return { valid: false, message: "Este link de assinatura expirou." };
     }
 
     return {
         valid: true,
-        propertyData: {
-            propNome: docData.propNome,
-            imovelTipologia: docData.imovelTipologia,
-            tipoCaptacao: docData.tipoCaptacao,
-            imovelEndereco: docData.imovelEndereco,
-            imovelNumero: docData.imovelNumero,
-            imovelBairro: docData.imovelBairro,
-        },
+        propertyData: docData,
     };
+}
+
+/**
+ * Cloud Function callable from the client to verify a signature token.
+ */
+exports.verifySignatureToken = functions.https.onCall(async (data, context) => {
+    const { captureId, token } = data;
+    if (!captureId || !token) {
+        throw new functions.https.HttpsError("invalid-argument", "ID da captação e token são obrigatórios.");
+    }
+    return await _verifyToken(captureId, token);
 });
 
 /**
@@ -85,7 +87,7 @@ exports.saveSignature = functions.https.onCall(async (data, context) => {
     const { captureId, token, signatureImage } = data;
 
     // 1. Re-validar o token
-    const verification = await exports.verifySignatureToken({ id: captureId, token: token }, context);
+    const verification = await _verifyToken(captureId, token);
     if (!verification.valid) {
         throw new functions.https.HttpsError("permission-denied", verification.message);
     }

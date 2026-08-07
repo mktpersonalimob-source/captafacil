@@ -1760,6 +1760,30 @@
             `;
         }
 
+        async function sendSignatureLink(captureId, button) {
+            const originalHtml = button.innerHTML;
+            button.disabled = true;
+            button.innerHTML = `<div class="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>`;
+
+            try {
+                const generateLink = functions.httpsCallable('generateSignatureLink');
+                const result = await generateLink({ captureId: captureId });
+
+                if (result.data.link) {
+                    prompt("Copie o link abaixo e envie para o proprietário:", result.data.link);
+                    logActivity('SIGNATURE_LINK_GENERATED', { captureId });
+                } else {
+                    throw new Error('Link não foi retornado pela função.');
+                }
+            } catch (error) {
+                console.error("Erro ao gerar link de assinatura:", error);
+                showAlert('Ocorreu um erro ao gerar o link. Verifique o console para mais detalhes.', 'Erro na Função');
+            } finally {
+                button.disabled = false;
+                button.innerHTML = originalHtml;
+            }
+        }
+
         // Listener de Autenticação
         auth.onAuthStateChanged(async user => {
             if (user) {
