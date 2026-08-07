@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assinatura de Documento - CaptaFácil</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='1' y='1' width='22' height='22' rx='4' fill='%23EA580C'/%3E%3Cpath d='M12 6l6 5v7H6v-7l6-5z' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-functions.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f4f4f5; }
+        .signature-pad-container { position: relative; width: 100%; height: 200px; }
+        #signature-pad { position: absolute; left: 0; top: 0; width:100%; height:100%; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div id="loading-view" class="text-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-orange-500 mx-auto mb-4"></div>
+        <p class="text-lg text-gray-700 font-semibold">Validando link de assinatura...</p>
+    </div>
+
+    <div id="error-view" class="hidden text-center max-w-md mx-auto">
+        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+            <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+        </div>
+        <h2 class="text-xl font-bold text-gray-800">Link Inválido ou Expirado</h2>
+        <p id="error-message" class="text-gray-600 mt-2">Este link de assinatura não é mais válido. Por favor, solicite um novo link ao seu corretor.</p>
+    </div>
+
+    <div id="success-view" class="hidden text-center max-w-md mx-auto">
+        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+            <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+        </div>
+        <h2 class="text-xl font-bold text-gray-800">Assinatura Enviada com Sucesso!</h2>
+        <p class="text-gray-600 mt-2">Obrigado! Sua assinatura foi registrada. Você já pode fechar esta página.</p>
+    </div>
+
+    <div id="signature-view" class="hidden max-w-2xl w-full bg-white rounded-xl shadow-lg p-6 sm:p-8 space-y-6">
+        <header>
+            <h1 class="text-2xl font-bold text-gray-800">Assinatura de Ficha de Captação</h1>
+            <p class="text-gray-600 mt-1">Por favor, confirme os dados e assine no campo abaixo.</p>
+        </header>
+
+        <div class="bg-gray-50 p-4 rounded-lg border text-sm space-y-2">
+            <h3 class="font-semibold text-gray-700">Detalhes do Imóvel</h3>
+            <p><strong>Proprietário:</strong> <span id="prop-nome"></span></p>
+            <p><strong>Imóvel:</strong> <span id="imovel-details"></span></p>
+            <p><strong>Endereço:</strong> <span id="imovel-endereco"></span></p>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Desenhe sua assinatura no campo abaixo:</label>
+            <div class="signature-pad-container bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg">
+                <canvas id="signature-pad"></canvas>
+            </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3">
+            <button id="clear-button" type="button" class="w-full sm:w-auto px-4 py-2 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50">
+                Limpar
+            </button>
+            <button id="save-button" type="button" class="w-full sm:w-auto sm:ml-auto px-6 py-3 bg-orange-600 text-white font-bold rounded-lg shadow hover:bg-orange-700 transition-all">
+                Assinar e Salvar
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAvqL_ESrGNMsMxlKt4Iwen_fBRZ4e_y58",
+            authDomain: "captafacil-6cf54.firebaseapp.com",
+            projectId: "captafacil-6cf54",
+            storageBucket: "captafacil-6cf54.firebasestorage.app",
+            messagingSenderId: "398747051095",
+            appId: "1:398747051095:web:68e8bf8c01988c045eef12"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const functions = firebase.functions();
+
+        const loadingView = document.getElementById('loading-view');
+        const errorView = document.getElementById('error-view');
+        const successView = document.getElementById('success-view');
+        const signatureView = document.getElementById('signature-view');
+        const errorMessageEl = document.getElementById('error-message');
+
+        const canvas = document.getElementById('signature-pad');
+        const signaturePad = new SignaturePad(canvas, {
+            backgroundColor: 'rgb(243, 244, 246)'
+        });
+
+        const saveButton = document.getElementById('save-button');
+        const clearButton = document.getElementById('clear-button');
+
+        let captureId = null;
+        let signatureToken = null;
+
+        function resizeCanvas() {
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext("2d").scale(ratio, ratio);
+            signaturePad.clear(); // otherwise isEmpty() might return incorrect value
+        }
+
+        window.addEventListener("resize", resizeCanvas);
+
+        clearButton.addEventListener('click', () => {
+            signaturePad.clear();
+        });
+
+        saveButton.addEventListener('click', async () => {
+            if (signaturePad.isEmpty()) {
+                alert("Por favor, forneça sua assinatura primeiro.");
+                return;
+            }
+
+            const originalHtml = saveButton.innerHTML;
+            saveButton.disabled = true;
+            saveButton.innerHTML = `<div class="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mx-auto"></div>`;
+
+            const signatureImage = signaturePad.toDataURL('image/png');
+
+            try {
+                const saveSignature = functions.httpsCallable('saveSignature');
+                const result = await saveSignature({
+                    captureId: captureId,
+                    token: signatureToken,
+                    signatureImage: signatureImage
+                });
+
+                if (result.data.success) {
+                    signatureView.classList.add('hidden');
+                    successView.classList.remove('hidden');
+                } else {
+                    throw new Error(result.data.message || 'Erro desconhecido ao salvar.');
+                }
+            } catch (error) {
+                console.error("Erro ao salvar assinatura:", error);
+                alert(`Ocorreu um erro: ${error.message}`);
+            } finally {
+                saveButton.disabled = false;
+                saveButton.innerHTML = originalHtml;
+            }
+        });
+
+        async function validateLink() {
+            const urlParams = new URLSearchParams(window.location.search);
+            captureId = urlParams.get('id');
+            signatureToken = urlParams.get('token');
+
+            if (!captureId || !signatureToken) {
+                loadingView.classList.add('hidden');
+                errorView.classList.remove('hidden');
+                errorMessageEl.innerText = 'Link de assinatura inválido ou incompleto. Faltam parâmetros essenciais.';
+                return;
+            }
+
+            try {
+                const verifyToken = functions.httpsCallable('verifySignatureToken');
+                const result = await verifyToken({ captureId: captureId, token: signatureToken });
+
+                if (result.data.valid) {
+                    const data = result.data.propertyData;
+                    document.getElementById('prop-nome').innerText = data.propNome || 'Não informado';
+                    const tipologia = data.imovelTipologia && data.imovelTipologia.length > 0 ? data.imovelTipologia.join(' / ') : 'Imóvel';
+                    document.getElementById('imovel-details').innerText = `${tipologia} (${data.tipoCaptacao || 'N/D'})`;
+                    document.getElementById('imovel-endereco').innerText = `${data.imovelEndereco}, ${data.imovelNumero} - ${data.imovelBairro}`;
+
+                    loadingView.classList.add('hidden');
+                    signatureView.classList.remove('hidden');
+                    resizeCanvas();
+                } else {
+                    throw new Error(result.data.message || 'Token inválido.');
+                }
+            } catch (error) {
+                console.error("Erro na validação do token:", error);
+                loadingView.classList.add('hidden');
+                errorView.classList.remove('hidden');
+                errorMessageEl.innerText = error.message;
+            }
+        }
+
+        window.onload = validateLink;
+
+    </script>
+</body>
+</html>
