@@ -173,6 +173,7 @@
         }
 
         async function submitSignature() {
+            const token = new URLSearchParams(window.location.search).get('token');
             const ownerName = document.getElementById('owner-name').value.trim();
             const ownerCpf = document.getElementById('owner-cpf').value.trim();
 
@@ -193,8 +194,11 @@
             const signatureImage = signaturePad.toDataURL('image/png');
 
             try {
-                // 1. Create signature document
-                const signatureRef = await db.collection('assinaturas').add({
+                const batch = db.batch();
+
+                // 1. Cria o documento da assinatura
+                const signatureRef = db.collection('assinaturas').doc();
+                batch.set(signatureRef, {
                     captureId: captureId,
                     ownerName: ownerName,
                     ownerCpf: ownerCpf,
@@ -202,14 +206,20 @@
                     signedAt: firebase.firestore.FieldValue.serverTimestamp(),
                 });
 
-                // 2. Update capture document
+                // 2. Atualiza o documento da captação original
                 const captureRef = db.collection('captacoes').doc(captureId);
-                await captureRef.update({
+                batch.update(captureRef, {
                     signatureId: signatureRef.id,
                     signatureStatus: 'signed',
                     signatureToken: firebase.firestore.FieldValue.delete(),
                     signatureTokenExpires: firebase.firestore.FieldValue.delete()
                 });
+
+                // 3. Deleta o link público para que não possa ser usado novamente
+                const linkRef = db.collection('signature_links').doc(token);
+                batch.delete(linkRef);
+
+                await batch.commit();
 
                 showView('success-view');
 
@@ -231,30 +241,30 @@
             }
 
             try {
-                const querySnapshot = await db.collection('captacoes')
-                    .where('signatureToken', '==', token)
-                    .limit(1)
-                    .get();
+                // Busca o documento do link público, não a coleção de captações
+                const linkRef = db.collection('signature_links').doc(token);
+                const linkDoc = await linkRef.get();
 
-                if (querySnapshot.empty) {
+                if (!linkDoc.exists) {
                     showError('Este link de assinatura é inválido ou já foi utilizado.');
                     return;
                 }
 
-                const doc = querySnapshot.docs[0];
-                const data = doc.data();
-                captureId = doc.id;
+                const data = linkDoc.data();
+                captureId = data.captureId; // Pega o ID da captação a partir do link
 
-                const expires = data.signatureTokenExpires.toDate();
+                const expires = data.expiresAt.toDate();
                 if (new Date() > expires) {
+                    // Opcional: deletar o link expirado
+                    await linkRef.delete();
                     showError('Este link de assinatura expirou. Por favor, solicite um novo.');
                     return;
                 }
 
                 // Populate data and show form
-                document.getElementById('property-address').innerText = `${data.imovelEndereco}, ${data.imovelNumero} - ${data.imovelBairro}`;
-                document.getElementById('owner-name').value = data.propNome || '';
-                document.getElementById('owner-cpf').value = data.propCpf || '';
+                document.getElementById('property-address').innerText = data.propertyAddress;
+                document.getElementById('owner-name').value = data.ownerName || '';
+                document.getElementById('owner-cpf').value = data.ownerCpf || '';
 
                 showView('signature-view');
                 initializeCanvas();
