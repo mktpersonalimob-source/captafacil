@@ -789,10 +789,8 @@
 
         <!-- Seção: Termo de Autorização -->
         <div class="pdf-section-title" style="margin-top: 20px;">5. TERMO DE AUTORIZAÇÃO E CONCORDÂNCIA</div>
-        <div style="border: 1px solid #000; padding: 8px; font-size: 9px; text-align: justify; line-height: 1.2;">
-            Todos os dados pessoais serão tratados pela Personal Consultoria Imobiliária de acordo com a Lei Geral de Proteção de Dados Pessoais (Lei n.º 13.709, de 14 de agosto de 2018). Os dados constantes neste cadastro são necessários e utilizados somente para o fim de comercialização/locação do imóvel acima descrito, incluindo sua divulgação em portais imobiliários, sites e demais meios de publicidade.
-            <br><br>
-            Estou ciente que sou responsável pelas informações, valores e disponibilidade do imóvel conforme informado nesta ficha, e quaisquer alterações, principalmente após iniciada a negociação com possíveis locatários ou compradores, pode gerar obrigação de cumprir a oferta e até gerar dano moral ao consumidor.
+        <div id="out-termo-pdf" class="pdf-value" style="border: 1px solid #000; padding: 8px; font-size: 9px; text-align: justify; line-height: 1.2;">
+            <!-- O texto do termo será carregado aqui pelo JavaScript -->
         </div>
 
         <div class="signature-box" style="justify-content: center; margin-top: 100px;">
@@ -893,6 +891,20 @@
             alertCallback = null;
         }
 
+        let termoAutorizacaoGlobal = 'Todos os dados pessoais serão tratados pela Personal Consultoria Imobiliária de acordo com a Lei Geral de Proteção de Dados Pessoais (Lei n.º 13.709, de 14 de agosto de 2018). Os dados constantes neste cadastro são necessários e utilizados somente para o fim de comercialização/locação do imóvel acima descrito, incluindo sua divulgação em portais imobiliários, sites e demais meios de publicidade.\n\nEstou ciente que sou responsável pelas informações, valores e disponibilidade do imóvel conforme informado nesta ficha, e quaisquer alterações, principalmente após iniciada a negociação com possíveis locatários ou compradores, pode gerar obrigação de cumprir a oferta e até gerar dano moral ao consumidor.';
+
+        async function fetchGlobalConfig() {
+            try {
+                const docRef = db.collection('configuracoes').doc('textos');
+                const doc = await docRef.get();
+                if (doc.exists && doc.data().termoAutorizacao) {
+                    termoAutorizacaoGlobal = doc.data().termoAutorizacao;
+                }
+            } catch (error) {
+                console.error("Erro ao buscar termo de autorização, usando texto padrão.", error);
+            }
+        }
+
         function populatePrintContainer(data) {
             const setText = (selector, value, upper = false) => {
                 document.querySelectorAll(selector).forEach(el => {
@@ -982,6 +994,7 @@
             setText('.out-valor-comissao', data.valorComissao ? `${data.valorComissao}%` : '');
             setText('.out-valor-exclusividade', data.valorExclusividade, true);
             setText('.out-id', data.id ? data.id.substring(0, 6).toUpperCase() : 'N/A');
+            document.getElementById('out-termo-pdf').innerText = termoAutorizacaoGlobal;
         }
 
         async function generatePDF(data, button) {
@@ -1778,6 +1791,7 @@
             // Inicia o relógio e as saudações
             updateDateTime();
             setInterval(updateDateTime, 1000); // Atualiza a cada segundo
+            fetchGlobalConfig();
             setGreetingMessage(userName, userData); // Pass userName and userData
             loadRecentCaptures();
             loadAdminNotices();

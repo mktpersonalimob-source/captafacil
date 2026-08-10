@@ -145,6 +145,14 @@
                             <p class="text-gray-600 mb-3">Ler as sugestões e reclamações enviadas pelos corretores.</p>
                             <span class="font-semibold text-orange-600 group-hover:text-orange-800 group-hover:translate-x-1 transition-transform inline-block">Ver Mensagens &rarr;</span>
                         </div>
+                        <div onclick="showAdminView('termo-pdf-manager')" class="p-5 bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow cursor-pointer group">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-3 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            <h2 class="text-lg font-bold text-gray-800 mb-1">Editar Termo do PDF</h2>
+                            <p class="text-gray-600 mb-3">Alterar o texto do termo de autorização que aparece no PDF gerado.</p>
+                            <span class="font-semibold text-green-600 group-hover:text-green-800 group-hover:translate-x-1 transition-transform inline-block">Editar Texto &rarr;</span>
+                        </div>
                     </div>
                 </div>
 
@@ -258,6 +266,27 @@
             </header>
             <div id="users-config-list" class="space-y-3"></div>
         </div>
+
+        <!-- GERENCIADOR DE TERMO PDF -->
+        <div id="termo-pdf-manager" class="hidden admin-view bg-white rounded-2xl shadow-lg p-4 sm:p-8">
+            <header class="flex justify-between items-center mb-8">
+                <h1 class="text-2xl font-bold text-gray-800">Editar Termo de Autorização do PDF</h1>
+                <button onclick="showAdminView('admin-panel')" class="text-sm font-medium text-gray-600 hover:text-orange-600 flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" /></svg>
+                    Voltar ao Painel
+                </button>
+            </header>
+            <div class="mb-6">
+                <label for="termo-pdf-textarea" class="block text-sm font-medium text-gray-700 mb-2">Texto do Termo:</label>
+                <p class="text-xs text-gray-500 mb-2">Este texto aparecerá na seção "TERMO DE AUTORIZAÇÃO E CONCORDÂNCIA" de todas as fichas de captação geradas em PDF.</p>
+                <textarea id="termo-pdf-textarea" rows="15" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500" placeholder="Carregando termo..."></textarea>
+                <button onclick="saveTermoPDF()" class="mt-4 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2 w-full sm:w-auto">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v4.586l-1.293-1.293zM9 4a1 1 0 012 0v2H9V4z" /></svg>
+                    Salvar Alterações
+                </button>
+            </div>
+        </div>
+
 
         <!-- BACKUP DE DADOS -->
         <div id="backup-manager" class="hidden admin-view bg-white rounded-2xl shadow-lg p-4 sm:p-8 text-center">
@@ -440,12 +469,14 @@
         let auditListener = null;
         let accessListener = null;
         let usersListener = null;
+        let termoPdfListener = null;
 
         function showAdminView(viewId) {
             // Desanexa todos os listeners para garantir que os dados sejam carregados apenas para a visualização ativa
             if (noticesListener) { noticesListener(); noticesListener = null; }
             if (feedbackListener) { feedbackListener(); feedbackListener = null; }
             if (capturesListener) { capturesListener(); capturesListener = null; }
+            if (termoPdfListener) { termoPdfListener(); termoPdfListener = null; }
             if (auditListener) { auditListener(); auditListener = null; }
             if (accessListener) { accessListener(); accessListener = null; }
             if (usersListener) { usersListener(); usersListener = null; }
@@ -461,6 +492,7 @@
             if (viewId === 'audit-viewer') loadAuditLogs();
             if (viewId === 'access-monitor') loadUserAccess();
             if (viewId === 'users-manager') loadUsersForConfig();
+            if (viewId === 'termo-pdf-manager') loadTermoPDF();
             if (viewId === 'backup-manager') logActivity('BACKUP_PAGE_VIEWED');
 
         }
@@ -643,6 +675,7 @@
             'USER_DETAILS_UPDATED': { title: 'Dados de Usuário Atualizados', color: 'blue' },
             'BACKUP_PAGE_VIEWED': { title: 'Página de Backup Acessada', color: 'gray' },
             'BACKUP_CREATED': { title: 'Backup Gerado', color: 'green' },
+            'PDF_TERM_UPDATED': { title: 'Termo do PDF Atualizado', color: 'blue' },
             'BACKUP_RESTORED': { title: 'Backup Restaurado', color: 'red' },
         };
 
@@ -799,6 +832,49 @@
                 console.error("Erro ao salvar dados do usuário:", error);
                 showAlert('Falha ao salvar os dados.', 'Erro');
             }
+        }
+
+        async function loadTermoPDF() {
+            const textArea = document.getElementById('termo-pdf-textarea');
+            textArea.value = 'Carregando...';
+            textArea.disabled = true;
+            try {
+                const docRef = db.collection('configuracoes').doc('textos');
+                const doc = await docRef.get();
+                reads++;
+                updateCounters();
+                if (doc.exists && doc.data().termoAutorizacao) {
+                    textArea.value = doc.data().termoAutorizacao;
+                } else {
+                    // Default text if not found in DB
+                    textArea.value = 'Todos os dados pessoais serão tratados pela Personal Consultoria Imobiliária de acordo com a Lei Geral de Proteção de Dados Pessoais (Lei n.º 13.709, de 14 de agosto de 2018). Os dados constantes neste cadastro são necessários e utilizados somente para o fim de comercialização/locação do imóvel acima descrito, incluindo sua divulgação em portais imobiliários, sites e demais meios de publicidade.\n\nEstou ciente que sou responsável pelas informações, valores e disponibilidade do imóvel conforme informado nesta ficha, e quaisquer alterações, principalmente após iniciada a negociação com possíveis locatários ou compradores, pode gerar obrigação de cumprir a oferta e até gerar dano moral ao consumidor.';
+                }
+            } catch (error) {
+                console.error("Erro ao carregar termo do PDF:", error);
+                textArea.value = 'Erro ao carregar o texto. Tente novamente.';
+            } finally {
+                textArea.disabled = false;
+            }
+        }
+
+        async function saveTermoPDF() {
+            const text = document.getElementById('termo-pdf-textarea').value;
+            if (!text.trim()) {
+                showAlert('O texto do termo não pode estar vazio.', 'Campo Vazio');
+                return;
+            }
+            showConfirm('Tem certeza que deseja alterar o texto do termo de autorização para todos os PDFs futuros?', 'Confirmar Alteração', async () => {
+                try {
+                    resetInactivityTimer();
+                    await db.collection('configuracoes').doc('textos').set({ termoAutorizacao: text }, { merge: true });
+                    writes++;
+                    updateCounters();
+                    logActivity('PDF_TERM_UPDATED');
+                    showAlert('Termo de autorização do PDF atualizado com sucesso!', 'Sucesso');
+                } catch (error) {
+                    showAlert('Falha ao salvar o novo termo.', 'Erro');
+                }
+            });
         }
 
         async function uploadBackup() {
