@@ -228,7 +228,44 @@
                     Voltar ao Painel
                 </button>
             </header>
-            <div id="all-captures-list" class="space-y-4"></div>
+            <!-- Filtros e Busca -->
+            <div class="p-4 bg-gray-50 rounded-lg border mb-6 space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="md:col-span-2">
+                        <label for="captures-search-input" class="block text-sm font-medium text-gray-700">Buscar por termo</label>
+                        <input type="text" id="captures-search-input" placeholder="Digite para buscar..." class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500">
+                    </div>
+                    <div>
+                        <label for="captures-search-field" class="block text-sm font-medium text-gray-700">Buscar no campo</label>
+                        <select id="captures-search-field" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 bg-white">
+                            <option value="propNome">Nome do Proprietário</option>
+                            <option value="imovelEndereco">Endereço do Imóvel</option>
+                            <option value="propCpf">CPF do Proprietário</option>
+                            <option value="owner_email">Email do Corretor</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="captures-sort-by" class="block text-sm font-medium text-gray-700">Ordenar por</label>
+                        <select id="captures-sort-by" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 bg-white">
+                            <option value="createdAt_desc">Mais Recentes</option>
+                            <option value="createdAt_asc">Mais Antigos</option>
+                            <option value="propNome_asc">Proprietário (A-Z)</option>
+                            <option value="imovelEndereco_asc">Endereço (A-Z)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3">
+                    <button onclick="clearCaptureFilters()" class="px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300">Limpar</button>
+                    <button onclick="applyCaptureFilters()" class="px-4 py-2 bg-orange-600 text-white font-medium rounded-lg shadow hover:bg-orange-700">Buscar</button>
+                </div>
+            </div>
+            <div id="all-captures-list" class="space-y-4 min-h-[200px] relative"></div>
+            <!-- Paginação -->
+            <div id="captures-pagination" class="hidden mt-8 flex justify-between items-center text-sm">
+                <button id="captures-prev-page" class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Anterior</button>
+                <span id="captures-page-info" class="font-medium text-gray-600"></span>
+                <button id="captures-next-page" class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Próxima</button>
+            </div>
         </div>
 
         <!-- VISUALIZADOR DE AUDITORIA -->
@@ -469,13 +506,14 @@
         let auditListener = null;
         let accessListener = null;
         let usersListener = null;
+        let capturesUnsubscribe = null; // Unsubscribe function for the captures listener
         let termoPdfListener = null;
 
         function showAdminView(viewId) {
             // Desanexa todos os listeners para garantir que os dados sejam carregados apenas para a visualização ativa
             if (noticesListener) { noticesListener(); noticesListener = null; }
             if (feedbackListener) { feedbackListener(); feedbackListener = null; }
-            if (capturesListener) { capturesListener(); capturesListener = null; }
+            if (capturesUnsubscribe) { capturesUnsubscribe(); capturesUnsubscribe = null; }
             if (termoPdfListener) { termoPdfListener(); termoPdfListener = null; }
             if (auditListener) { auditListener(); auditListener = null; }
             if (accessListener) { accessListener(); accessListener = null; }
@@ -488,7 +526,7 @@
             // Carrega os dados para a visualização selecionada
             if (viewId === 'notices-manager') loadNotices();
             if (viewId === 'feedback-viewer') loadFeedback();
-            if (viewId === 'captures-manager') loadAllCaptures();
+            if (viewId === 'captures-manager') initCapturesManager();
             if (viewId === 'audit-viewer') loadAuditLogs();
             if (viewId === 'access-monitor') loadUserAccess();
             if (viewId === 'users-manager') loadUsersForConfig();
@@ -600,29 +638,126 @@
             });
         }
 
-        async function loadAllCaptures() {
-            const listEl = document.getElementById('all-captures-list');
+        // ========================================================================
+        // GERENCIADOR DE CAPTAÇÕES COM PAGINAÇÃO E FILTRO
+        // ========================================================================
+        let capturesQueryState = {};
+        const CAPTURES_PER_PAGE = 10;
 
-            capturesListener = db.collection('captacoes').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
-                reads++;
+        function initCapturesManager() {
+            // Limpa o estado anterior e os listeners
+            if (capturesUnsubscribe) capturesUnsubscribe();
+            document.getElementById('all-captures-list').innerHTML = '';
+            
+            // Configura os event listeners dos botões de paginação
+            document.getElementById('captures-next-page').onclick = () => loadCapturesPage('next');
+            document.getElementById('captures-prev-page').onclick = () => loadCapturesPage('prev');
+            
+            // Inicia a primeira busca
+            applyCaptureFilters();
+        }
+
+        function applyCaptureFilters() {
+            capturesQueryState = {
+                page: 1,
+                history: [null], // O primeiro item é nulo para a primeira página
+                lastDoc: null,
+                searchTerm: document.getElementById('captures-search-input').value.trim(),
+                searchField: document.getElementById('captures-search-field').value,
+                sortBy: document.getElementById('captures-sort-by').value,
+            };
+            loadCapturesPage();
+        }
+
+        function clearCaptureFilters() {
+            document.getElementById('captures-search-input').value = '';
+            document.getElementById('captures-sort-by').value = 'createdAt_desc';
+            applyCaptureFilters();
+        }
+
+        async function loadCapturesPage(direction = null) {
+            const listEl = document.getElementById('all-captures-list');
+            const paginationEl = document.getElementById('captures-pagination');
+            const pageInfoEl = document.getElementById('captures-page-info');
+            const nextBtn = document.getElementById('captures-next-page');
+            const prevBtn = document.getElementById('captures-prev-page');
+
+            listEl.innerHTML = `<p class="text-gray-500 text-center py-10 animate-pulse">Carregando captações...</p>`;
+            paginationEl.classList.add('hidden');
+
+            if (direction === 'next') {
+                capturesQueryState.page++;
+                capturesQueryState.history.push(capturesQueryState.lastDoc);
+            } else if (direction === 'prev') {
+                if (capturesQueryState.page > 1) {
+                    capturesQueryState.page--;
+                    capturesQueryState.history.pop();
+                }
+            }
+
+            let query = db.collection('captacoes');
+
+            // Lógica de busca
+            // IMPORTANTE: Para que a busca e ordenação funcionem, você precisa criar Índices no Firestore.
+            // O console do Firebase geralmente sugere o link para criar o índice automaticamente quando uma query falha por falta dele.
+            if (capturesQueryState.searchTerm) {
+                const field = capturesQueryState.searchField;
+                const term = capturesQueryState.searchTerm;
+                
+                // Para CPF, busca exata sem pontuação
+                if (field === 'propCpf') {
+                    query = query.where(field, '==', term.replace(/\D/g, ''));
+                } else {
+                    // Para outros campos, faz uma busca "começa com" (case-sensitive)
+                    query = query.orderBy(field).startAt(term).endAt(term + '\uf8ff');
+                }
+            }
+
+            // Lógica de ordenação
+            const [sortField, sortDirection] = capturesQueryState.sortBy.split('_');
+            // Adiciona a ordenação principal, a menos que já tenha sido adicionada pela busca
+            if (!capturesQueryState.searchTerm || capturesQueryState.searchField !== sortField) {
+                query = query.orderBy(sortField, sortDirection);
+            }
+
+            // Lógica de paginação
+            const startAfterDoc = capturesQueryState.history[capturesQueryState.page - 1];
+            if (startAfterDoc) {
+                query = query.startAfter(startAfterDoc);
+            }
+
+            query = query.limit(CAPTURES_PER_PAGE);
+
+            try {
+                const snapshot = await query.get();
+                reads += snapshot.size || 1; // Incrementa pelas leituras feitas
                 updateCounters();
+
                 if (snapshot.empty) {
-                    listEl.innerHTML = '<p class="text-gray-500">Nenhuma captação encontrada no sistema.</p>';
+                    listEl.innerHTML = '<p class="text-gray-500 text-center py-10">Nenhuma captação encontrada com os filtros atuais.</p>';
+                    pageInfoEl.innerText = `Página ${capturesQueryState.page}`;
+                    prevBtn.disabled = capturesQueryState.page === 1;
+                    nextBtn.disabled = true;
+                    paginationEl.classList.remove('hidden');
                     return;
                 }
+
                 listEl.innerHTML = '';
-                let html = '';
+                capturesQueryState.firstDoc = snapshot.docs[0];
+                capturesQueryState.lastDoc = snapshot.docs[snapshot.docs.length - 1];
+
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     const date = new Date(data.createdAt.seconds * 1000).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                    html += `
+                    const tipologia = (data.imovelTipologia && data.imovelTipologia.length > 0) ? data.imovelTipologia.join(' / ') : 'Imóvel';
+                    listEl.innerHTML += `
                         <div class="p-4 border rounded-lg bg-gray-50 text-sm">
                             <div class="flex flex-wrap justify-between items-start gap-2">
                                 <div>
-                                    <p class="font-bold text-gray-800">${data.imovelTipo || 'Imóvel'} - ${data.imovelEndereco || 'Endereço não informado'}</p>
+                                    <p class="font-bold text-gray-800">${tipologia} - ${data.imovelEndereco || 'Endereço não informado'}</p>
                                     <p class="text-gray-600">Proprietário: <span class="font-medium">${data.propNome || 'N/A'}</span></p>
                                     <p class="text-gray-600">Corretor: <span class="font-medium">${data.owner_email}</span></p>
-                                    <p class="text-xs text-gray-500">Cadastrado em: ${date}</p>
+                                    <p class="text-xs text-gray-500">ID: ${doc.id} | Cadastrado em: ${date}</p>
                                 </div>
                                 <div class="flex gap-2 shrink-0">
                                     <button onclick="editCapture('${doc.id}')" class="px-3 py-1 bg-blue-500 text-white font-semibold rounded hover:bg-blue-600">Editar</button>
@@ -632,12 +767,17 @@
                         </div>
                     `;
                 });
-                listEl.innerHTML = html;
-            }, error => {
+
+                // Atualiza controles de paginação
+                paginationEl.classList.remove('hidden');
+                pageInfoEl.innerText = `Página ${capturesQueryState.page}`;
+                prevBtn.disabled = capturesQueryState.page === 1;
+                nextBtn.disabled = snapshot.docs.length < CAPTURES_PER_PAGE;
+
+            } catch (error) {
                 console.error("Erro ao carregar captações:", error);
-                showAlert('Falha ao carregar captações.', 'Erro');
-                capturesListener = null;
-            });
+                listEl.innerHTML = '<p class="text-red-500 text-center py-10">Ocorreu um erro ao buscar os dados. Verifique os índices do Firestore no console.</p>';
+            }
         }
 
         function editCapture(id) {
@@ -650,6 +790,7 @@
                 try {
                     resetInactivityTimer();
                     await db.collection('captacoes').doc(id).delete();
+                    loadCapturesPage(); // Recarrega a página atual
                     writes++;
                     updateCounters();
                     logActivity('CAPTURE_DELETED', { captureId: id });
