@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CaptaFácil - Assinatura de Documento</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='1' y='1' width='22' height='22' rx='4' fill='%23EA580C'/%3E%3Cpath d='M12 6l6 5v7H6v-7l6-5z' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        #signature-pad { border: 2px dashed #ccc; touch-action: none; }
+        .view { display: none; }
+        .active { display: block; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div id="loading-view" class="view active text-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-orange-500 mx-auto mb-4"></div>
+        <p class="text-lg text-gray-700 font-semibold">Verificando link...</p>
+    </div>
+
+    <div id="error-view" class="view text-center max-w-md w-full bg-white p-8 rounded-lg shadow-lg">
+        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+            <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        </div>
+        <h2 class="text-xl font-bold text-gray-800">Link Inválido ou Expirado</h2>
+        <p id="error-message" class="text-gray-600 mt-2">Este link de assinatura não é mais válido. Por favor, solicite um novo link ao seu corretor.</p>
+    </div>
+
+    <div id="success-view" class="view text-center max-w-md w-full bg-white p-8 rounded-lg shadow-lg">
+        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+            <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+        </div>
+        <h2 class="text-xl font-bold text-gray-800">Assinatura Enviada!</h2>
+        <p class="text-gray-600 mt-2">Obrigado! Sua assinatura foi registrada com sucesso. Você já pode fechar esta janela.</p>
+    </div>
+
+    <div id="signature-view" class="view max-w-2xl w-full bg-white p-6 sm:p-8 rounded-lg shadow-lg">
+        <header class="text-center mb-6">
+            <svg class="w-40 mx-auto mb-2" viewBox="0 0 215 40" xmlns="http://www.w3.org/2000/svg">
+                <rect x="1" y="1" width="38" height="38" rx="5" fill="#EA580C" />
+                <path d="M20 12l8 6v8H12v-8l8-6z" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                <text x="50" y="29" font-family="Inter, sans-serif" font-size="22" font-weight="800" fill="#374151" letter-spacing="-0.5px">Capta</text>
+                <text x="125" y="29" font-family="Inter, sans-serif" font-size="22" font-weight="800" fill="#EA580C" letter-spacing="-0.5px">Fácil</text>
+            </svg>
+            <h1 class="text-2xl font-bold text-gray-800">Assinatura de Documento</h1>
+            <p class="text-gray-600">Por favor, confirme seus dados e assine abaixo.</p>
+        </header>
+
+        <div class="bg-gray-50 p-4 rounded-lg border mb-6">
+            <h3 class="font-semibold text-gray-700 mb-2">Imóvel Referente:</h3>
+            <p id="property-address" class="text-sm text-gray-600">Carregando...</p>
+        </div>
+
+        <div class="space-y-4">
+            <div>
+                <label for="owner-name" class="block text-sm font-medium text-gray-700">Nome Completo (Conforme documento) *</label>
+                <input type="text" id="owner-name" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500">
+            </div>
+            <div>
+                <label for="owner-cpf" class="block text-sm font-medium text-gray-700">CPF *</label>
+                <input type="text" id="owner-cpf" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500" placeholder="000.000.000-00">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Assinatura *</label>
+                <div class="relative mt-1">
+                    <canvas id="signature-pad" class="w-full h-48 bg-white rounded-md"></canvas>
+                    <button id="clear-signature" class="absolute top-2 right-2 text-xs text-gray-500 hover:text-red-600 font-semibold">Limpar</button>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Desenhe sua assinatura no campo acima com o mouse ou o dedo.</p>
+            </div>
+        </div>
+
+        <div class="mt-6">
+            <button id="submit-signature" class="w-full flex justify-center items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
+                Confirmar e Enviar Assinatura
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAvqL_ESrGNMsMxlKt4Iwen_fBRZ4e_y58",
+            authDomain: "captafacil-6cf54.firebaseapp.com",
+            projectId: "captafacil-6cf54",
+            storageBucket: "captafacil-6cf54.firebasestorage.app",
+            messagingSenderId: "398747051095",
+            appId: "1:398747051095:web:68e8bf8c01988c045eef12"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let captureId = null;
+        let isDrawing = false;
+        let signaturePad, ctx;
+
+        function showView(viewId) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+        }
+
+        function showError(message) {
+            document.getElementById('error-message').innerText = message;
+            showView('error-view');
+        }
+
+        function initializeCanvas() {
+            signaturePad = document.getElementById('signature-pad');
+            ctx = signaturePad.getContext('2d');
+
+            // Set canvas size based on its display size
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            signaturePad.width = signaturePad.offsetWidth * ratio;
+            signaturePad.height = signaturePad.offsetHeight * ratio;
+            ctx.scale(ratio, ratio);
+            ctx.strokeStyle = '#374151';
+            ctx.lineWidth = 2;
+
+            function getEventPosition(event) {
+                const rect = signaturePad.getBoundingClientRect();
+                if (event.touches && event.touches.length > 0) {
+                    return {
+                        x: event.touches[0].clientX - rect.left,
+                        y: event.touches[0].clientY - rect.top
+                    };
+                }
+                return {
+                    x: event.clientX - rect.left,
+                    y: event.clientY - rect.top
+                };
+            }
+
+            function startDrawing(event) {
+                event.preventDefault();
+                isDrawing = true;
+                const { x, y } = getEventPosition(event);
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+            }
+
+            function draw(event) {
+                if (!isDrawing) return;
+                event.preventDefault();
+                const { x, y } = getEventPosition(event);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+            }
+
+            function stopDrawing() {
+                isDrawing = false;
+                ctx.closePath();
+            }
+
+            signaturePad.addEventListener('mousedown', startDrawing);
+            signaturePad.addEventListener('mousemove', draw);
+            signaturePad.addEventListener('mouseup', stopDrawing);
+            signaturePad.addEventListener('mouseleave', stopDrawing);
+
+            signaturePad.addEventListener('touchstart', startDrawing);
+            signaturePad.addEventListener('touchmove', draw);
+            signaturePad.addEventListener('touchend', stopDrawing);
+
+            document.getElementById('clear-signature').addEventListener('click', () => {
+                ctx.clearRect(0, 0, signaturePad.width, signaturePad.height);
+            });
+        }
+
+        function isCanvasBlank() {
+            return !ctx.getImageData(0, 0, signaturePad.width, signaturePad.height).data.some(channel => channel !== 0);
+        }
+
+        async function submitSignature() {
+            const ownerName = document.getElementById('owner-name').value.trim();
+            const ownerCpf = document.getElementById('owner-cpf').value.trim();
+
+            if (!ownerName || !ownerCpf) {
+                alert('Por favor, preencha seu nome completo e CPF.');
+                return;
+            }
+
+            if (isCanvasBlank()) {
+                alert('Por favor, desenhe sua assinatura.');
+                return;
+            }
+
+            const btn = document.getElementById('submit-signature');
+            btn.disabled = true;
+            btn.innerText = 'Enviando...';
+
+            const signatureImage = signaturePad.toDataURL('image/png');
+
+            try {
+                // 1. Create signature document
+                const signatureRef = await db.collection('assinaturas').add({
+                    captureId: captureId,
+                    ownerName: ownerName,
+                    ownerCpf: ownerCpf,
+                    signatureImage: signatureImage,
+                    signedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                });
+
+                // 2. Update capture document
+                const captureRef = db.collection('captacoes').doc(captureId);
+                await captureRef.update({
+                    signatureId: signatureRef.id,
+                    signatureStatus: 'signed',
+                    signatureToken: firebase.firestore.FieldValue.delete(),
+                    signatureTokenExpires: firebase.firestore.FieldValue.delete()
+                });
+
+                showView('success-view');
+
+            } catch (error) {
+                console.error("Error submitting signature:", error);
+                showError('Ocorreu um erro ao enviar sua assinatura. Tente novamente.');
+                btn.disabled = false;
+                btn.innerText = 'Confirmar e Enviar Assinatura';
+            }
+        }
+
+        async function validateToken() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+
+            if (!token) {
+                showError('Token de assinatura não encontrado.');
+                return;
+            }
+
+            try {
+                const querySnapshot = await db.collection('captacoes')
+                    .where('signatureToken', '==', token)
+                    .limit(1)
+                    .get();
+
+                if (querySnapshot.empty) {
+                    showError('Este link de assinatura é inválido ou já foi utilizado.');
+                    return;
+                }
+
+                const doc = querySnapshot.docs[0];
+                const data = doc.data();
+                captureId = doc.id;
+
+                const expires = data.signatureTokenExpires.toDate();
+                if (new Date() > expires) {
+                    showError('Este link de assinatura expirou. Por favor, solicite um novo.');
+                    return;
+                }
+
+                // Populate data and show form
+                document.getElementById('property-address').innerText = `${data.imovelEndereco}, ${data.imovelNumero} - ${data.imovelBairro}`;
+                document.getElementById('owner-name').value = data.propNome || '';
+                document.getElementById('owner-cpf').value = data.propCpf || '';
+
+                showView('signature-view');
+                initializeCanvas();
+                document.getElementById('submit-signature').addEventListener('click', submitSignature);
+
+            } catch (error) {
+                console.error("Error validating token:", error);
+                showError('Ocorreu um erro ao verificar o link. Tente novamente mais tarde.');
+            }
+        }
+
+        window.onload = validateToken;
+
+    </script>
+</body>
+</html>

@@ -124,6 +124,14 @@
                             <p class="text-gray-600 mb-3">Gerar e restaurar um arquivo com todos os dados do sistema.</p>
                             <span class="font-semibold text-gray-600 group-hover:text-gray-800 group-hover:translate-x-1 transition-transform inline-block">Acessar &rarr;</span>
                         </div>
+                        <div onclick="showAdminView('signatures-manager')" class="p-5 bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow cursor-pointer group">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-3 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L14.732 3.732z" />
+                            </svg>
+                            <h2 class="text-lg font-bold text-gray-800 mb-1">Gerenciar Assinaturas</h2>
+                            <p class="text-gray-600 mb-3">Visualizar todas as assinaturas digitais coletadas no sistema.</p>
+                            <span class="font-semibold text-purple-600 group-hover:text-purple-800 group-hover:translate-x-1 transition-transform inline-block">Acessar &rarr;</span>
+                        </div>
                     </div>
                 </div>
 
@@ -202,6 +210,20 @@
                 <div id="notices-list" class="space-y-3">
                     <p class="text-gray-500 animate-pulse">Carregando recados...</p>
                 </div>
+            </div>
+        </div>
+
+        <!-- GERENCIADOR DE ASSINATURAS -->
+        <div id="signatures-manager" class="hidden admin-view bg-white rounded-2xl shadow-lg p-4 sm:p-8">
+            <header class="flex justify-between items-center mb-8">
+                <h1 class="text-2xl font-bold text-gray-800">Gerenciar Assinaturas Digitais</h1>
+                <button onclick="showAdminView('admin-panel')" class="text-sm font-medium text-gray-600 hover:text-orange-600 flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" /></svg>
+                    Voltar ao Painel
+                </button>
+            </header>
+            <div id="signatures-list" class="space-y-4">
+                <p class="text-gray-500 animate-pulse">Carregando assinaturas...</p>
             </div>
         </div>
 
@@ -507,6 +529,7 @@
         let accessListener = null;
         let usersListener = null;
         let capturesUnsubscribe = null; // Unsubscribe function for the captures listener
+        let signaturesListener = null;
         let termoPdfListener = null;
 
         function showAdminView(viewId) {
@@ -514,6 +537,7 @@
             if (noticesListener) { noticesListener(); noticesListener = null; }
             if (feedbackListener) { feedbackListener(); feedbackListener = null; }
             if (capturesUnsubscribe) { capturesUnsubscribe(); capturesUnsubscribe = null; }
+            if (signaturesListener) { signaturesListener(); signaturesListener = null; }
             if (termoPdfListener) { termoPdfListener(); termoPdfListener = null; }
             if (auditListener) { auditListener(); auditListener = null; }
             if (accessListener) { accessListener(); accessListener = null; }
@@ -528,6 +552,7 @@
             if (viewId === 'feedback-viewer') loadFeedback();
             if (viewId === 'captures-manager') initCapturesManager();
             if (viewId === 'audit-viewer') loadAuditLogs();
+            if (viewId === 'signatures-manager') loadSignatures();
             if (viewId === 'access-monitor') loadUserAccess();
             if (viewId === 'users-manager') loadUsersForConfig();
             if (viewId === 'termo-pdf-manager') loadTermoPDF();
@@ -635,6 +660,43 @@
                 console.error("Erro ao carregar feedback:", error);
                 showAlert('Falha ao carregar mensagens.', 'Erro');
                 feedbackListener = null;
+            });
+        }
+
+        async function loadSignatures() {
+            const listEl = document.getElementById('signatures-list');
+            listEl.innerHTML = `<p class="text-gray-500 animate-pulse">Carregando assinaturas...</p>`;
+
+            signaturesListener = db.collection('assinaturas').orderBy('signedAt', 'desc').onSnapshot(snapshot => {
+                reads += snapshot.size || 1;
+                updateCounters();
+                if (snapshot.empty) {
+                    listEl.innerHTML = '<p class="text-gray-500">Nenhuma assinatura digital encontrada.</p>';
+                    return;
+                }
+                listEl.innerHTML = '';
+                let html = '';
+                snapshot.forEach(doc => {
+                    const sig = doc.data();
+                    const date = new Date(sig.signedAt.seconds * 1000).toLocaleString('pt-BR');
+                    html += `
+                        <div class="p-4 border rounded-lg bg-gray-50 flex flex-wrap gap-4 items-center">
+                            <div class="p-2 bg-white border rounded">
+                                <img src="${sig.signatureImage}" alt="Assinatura" class="h-16 w-48 object-contain">
+                            </div>
+                            <div class="text-sm flex-grow">
+                                <p><strong>Proprietário:</strong> ${sig.ownerName}</p>
+                                <p><strong>CPF:</strong> ${sig.ownerCpf}</p>
+                                <p><strong>Data:</strong> ${date}</p>
+                                <p class="text-xs text-gray-500 mt-1">ID da Assinatura: ${doc.id} | ID da Captação: ${sig.captureId}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+                listEl.innerHTML = html;
+            }, error => {
+                console.error("Erro ao carregar assinaturas:", error);
+                listEl.innerHTML = '<p class="text-red-500">Falha ao carregar assinaturas.</p>';
             });
         }
 
@@ -781,8 +843,10 @@
         }
 
         function editCapture(id) {
-            logActivity('CAPTURE_EDIT_ATTEMPT', { captureId: id }); //
-            window.open(`form.html?edit=${id}`, '_blank'); //
+            logActivity('CAPTURE_EDIT_ATTEMPT', { captureId: id });
+            const width = 900;
+            const height = 700;
+            window.open(`form.html?edit=${id}`, 'editWindow', `width=${width},height=${height},scrollbars=yes,resizable=yes`);
         }
 
         async function deleteCapture(id) {
@@ -816,6 +880,8 @@
             'USER_DETAILS_UPDATED': { title: 'Dados de Usuário Atualizados', color: 'blue' },
             'BACKUP_PAGE_VIEWED': { title: 'Página de Backup Acessada', color: 'gray' },
             'BACKUP_CREATED': { title: 'Backup Gerado', color: 'green' },
+            'USER_ACTIVATED': { title: 'Usuário Ativado', color: 'green' },
+            'USER_DEACTIVATED': { title: 'Usuário Desativado', color: 'red' },
             'PDF_TERM_UPDATED': { title: 'Termo do PDF Atualizado', color: 'blue' },
             'BACKUP_RESTORED': { title: 'Backup Restaurado', color: 'red' },
         };
@@ -914,6 +980,7 @@
                 let html = '';
                 snapshot.forEach(doc => {
                     const user = doc.data();
+                    const isActiveChecked = user.isActive !== false ? 'checked' : ''; // Default to active if not set
                     html += `
                         <div class="p-4 bg-gray-50 rounded-lg border">
                             <p class="font-semibold text-gray-800">${user.email}</p>
@@ -931,17 +998,25 @@
                                     <input type="date" id="dataNascimento-${doc.id}" class="w-full px-2 py-1 border rounded-md" value="${user.dataNascimento || ''}">
                                 </div>
                                 <div>
+                                    <label for="dataEntrada-${doc.id}" class="text-xs font-medium text-gray-500">Data de Entrada na Empresa</label>
+                                    <input type="date" id="dataEntrada-${doc.id}" class="w-full px-2 py-1 border rounded-md" value="${user.dataEntrada || ''}">
+                                </div>
+                                <div>
                                     <label for="equipe-${doc.id}" class="text-xs font-medium text-gray-500">Equipe</label>
                                     <select id="equipe-${doc.id}" class="w-full px-2 py-1 border rounded-md bg-white">
+                                        <option value="">Não Definido</option>
                                         <option value="Locação" ${user.equipe === 'Locação' ? 'selected' : ''}>Locação</option>
-                                        <option value="Lançamento" ${user.equipe === 'Lançamento' ? 'selected' : ''}>Lançamento</option>
-                                        <option value="Terceiro" ${user.equipe === 'Terceiro' ? 'selected' : ''}>Terceiro</option>
+                                        <option value="Venda" ${user.equipe === 'Venda' ? 'selected' : ''}>Venda</option>
                                         <option value="Administrativo" ${user.equipe === 'Administrativo' ? 'selected' : ''}>Administrativo</option>
                                     </select>
                                 </div>
+                                <div class="flex items-center mt-4">
+                                    <input type="checkbox" id="isActive-${doc.id}" class="rounded text-green-600 focus:ring-green-500" ${isActiveChecked}>
+                                    <label for="isActive-${doc.id}" class="ml-2 text-sm font-medium text-gray-700">Usuário Ativo</label>
+                                </div>
                             </div>
                             <div class="text-right mt-3">
-                                <button onclick="saveUserDetails('${doc.id}')" class="px-4 py-1.5 bg-blue-500 text-white text-sm font-semibold rounded-lg hover:bg-blue-600">Salvar Alterações</button>
+                                <button onclick="saveUserDetails('${doc.id}', '${user.email}')" class="px-4 py-1.5 bg-blue-500 text-white text-sm font-semibold rounded-lg hover:bg-blue-600">Salvar Alterações</button>
                             </div>
                         </div>
                     `;
@@ -954,25 +1029,29 @@
             });
         }
 
-        async function saveUserDetails(uid) {
+        async function saveUserDetails(uid, userEmail) {
             const updatedData = {
                 nome: document.getElementById(`nome-${uid}`).value,
                 sobrenome: document.getElementById(`sobrenome-${uid}`).value,
                 dataNascimento: document.getElementById(`dataNascimento-${uid}`).value,
+                dataEntrada: document.getElementById(`dataEntrada-${uid}`).value, // New field
                 equipe: document.getElementById(`equipe-${uid}`).value,
+                isActive: document.getElementById(`isActive-${uid}`).checked, // New field
             };
 
-            try {
-                resetInactivityTimer();
-                await db.collection('users').doc(uid).update(updatedData);
-                writes++;
-                updateCounters();
-                logActivity('USER_DETAILS_UPDATED', { userId: uid, ...updatedData });
-                showAlert('Dados do usuário atualizados com sucesso!', 'Sucesso');
-            } catch (error) {
-                console.error("Erro ao salvar dados do usuário:", error);
-                showAlert('Falha ao salvar os dados.', 'Erro');
-            }
+            showConfirm(`Tem certeza que deseja atualizar os dados do usuário ${userEmail}?`, 'Confirmar Alteração', async () => {
+                try {
+                    resetInactivityTimer();
+                    await db.collection('users').doc(uid).update(updatedData);
+                    writes++;
+                    updateCounters();
+                    logActivity('USER_DETAILS_UPDATED', { userId: uid, email: userEmail, ...updatedData });
+                    showAlert('Dados do usuário atualizados com sucesso!', 'Sucesso');
+                } catch (error) {
+                    console.error("Erro ao salvar dados do usuário:", error);
+                    showAlert('Falha ao salvar os dados.', 'Erro');
+                }
+            });
         }
 
         async function loadTermoPDF() {

@@ -349,12 +349,16 @@
     <div id="form-view" class="view active max-w-4xl mx-auto my-6 sm:my-10 mb-20 bg-white rounded-2xl shadow-lg p-4 sm:p-6 lg:p-8">
         <header class="mb-8 flex flex-wrap justify-between items-center gap-4">
                     <div>
-                        <h1 class="text-2xl sm:text-3xl font-extrabold text-orange-900 tracking-tight">Captação Digital de Imóveis</h1>
+                        <h1 id="form-title" class="text-2xl sm:text-3xl font-extrabold text-orange-900 tracking-tight">Captação Digital de Imóveis</h1>
                         <p class="text-sm text-gray-500 mt-1">Preencha os dados e gere a ficha oficial automaticamente.</p>
                     </div>
-                    <button onclick="window.location.href='home.html'" class="text-sm font-medium text-gray-600 hover:text-orange-600 flex items-center gap-1 shrink-0">
+                    <button id="btn-back-to-home" onclick="window.location.href='home.html'" class="text-sm font-medium text-gray-600 hover:text-orange-600 flex items-center gap-1 shrink-0">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" /></svg>
-                        <span>Voltar ao Início</span>
+                        <span id="btn-back-to-home-text">Voltar ao Início</span>
+                    </button>
+                    <button id="btn-close-window" onclick="window.close()" class="hidden text-sm font-medium text-gray-600 hover:text-red-600 flex items-center gap-1 shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                        <span>Fechar Janela</span>
                     </button>
                 </header>
         
@@ -887,9 +891,13 @@
             <!-- O texto do termo será carregado aqui pelo JavaScript -->
         </div>
 
-        <div class="signature-box" style="justify-content: center; margin-top: 100px;">
-            <div class="signature-line" style="width: 60%;">
+        <div class="signature-box" style="justify-content: center; margin-top: 80px;">
+            <div class="signature-line" style="width: 70%; position: relative; padding-bottom: 30px;">
+                <img id="pdf-signature-image" src="" style="position: absolute; bottom: 35px; left: 50%; transform: translateX(-50%); max-height: 60px; max-width: 90%; object-fit: contain;">
                 Assinatura do Proprietário
+                <div id="pdf-signature-details" style="font-size: 7px; color: #333; margin-top: 2px; line-height: 1.2; font-weight: normal;">
+                    <!-- Details will be injected here -->
+                </div>
             </div>
         </div>
         
@@ -1227,7 +1235,7 @@
             return data;
         }
 
-        function populatePrintContainer(data) {
+        function populatePrintContainer(data, signatureData = null) {
             const setText = (selector, value, upper = false) => {
                 document.querySelectorAll(selector).forEach(el => {
                     let finalValue = value || '-';
@@ -1248,6 +1256,20 @@
                 }
                 return dateString; // Fallback for already formatted dates
             };
+
+            // Clear previous signature and add new one if available
+            const sigImg = document.getElementById('pdf-signature-image');
+            const sigDetails = document.getElementById('pdf-signature-details');
+            if (sigImg) sigImg.src = '';
+            if (sigDetails) sigDetails.innerHTML = '';
+
+            if (signatureData) {
+                if (sigImg) sigImg.src = signatureData.signatureImage;
+                if (sigDetails) {
+                    const signedDate = new Date(signatureData.signedAt.seconds * 1000).toLocaleString('pt-BR');
+                    sigDetails.innerHTML = `Assinado digitalmente por: ${signatureData.ownerName}<br>CPF: ${signatureData.ownerCpf}<br>Data: ${signedDate}`;
+                }
+            }
 
             // Handle Foto/Placa checkboxes
             const fotoBox = document.querySelector('#print-container .out-tem-foto');
@@ -1341,6 +1363,7 @@
                 if (currentEditingId) {
                     data.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
                     docRef = db.collection('captacoes').doc(currentEditingId);
+                    data.signatureStatus = 'updated'; // Reset signature status on update
                     await docRef.update(data);
                 } else {
                     data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
@@ -1358,14 +1381,27 @@
             }
         }
 
-        async function generatePDF(data) {
+        async function generatePDF(data, signatureData = null) {
             const btn = document.getElementById('success-btn-pdf');
             const originalText = btn.innerHTML;
             btn.disabled = true;
             btn.innerText = 'Gerando PDF...';
 
             try {
-                populatePrintContainer(data);
+                let finalSignatureData = signatureData;
+                // If we are generating from the form success modal, we might need to fetch the signature
+                if (!finalSignatureData && data.signatureId) {
+                     try {
+                        const sigDoc = await db.collection('assinaturas').doc(data.signatureId).get();
+                        if (sigDoc.exists) {
+                            finalSignatureData = sigDoc.data();
+                        }
+                    } catch (e) {
+                        console.error("Error fetching signature for PDF:", e);
+                    }
+                }
+
+                populatePrintContainer(data, finalSignatureData);
                 const element = document.getElementById('print-container');
                 const canvas = await html2canvas(element, { scale: 2, useCORS: true });
                 const imgData = canvas.toDataURL('image/jpeg', 1.0);
@@ -1444,6 +1480,7 @@
 
                 const data = doc.data();
                 currentEditingId = docId;
+
 
                 // Clear dynamic fields before populating
                 document.querySelectorAll('.extra-phone').forEach(el => el.remove());
@@ -1664,7 +1701,7 @@
             // Success Modal Actions
             const successBtnPdf = document.getElementById('success-btn-pdf');
             if (successBtnPdf) {
-                successBtnPdf.addEventListener('click', () => {
+                successBtnPdf.addEventListener('click', async () => {
                     if (lastPdfData) generatePDF(lastPdfData);
                 });
             } else {
@@ -1863,6 +1900,23 @@
             auth.onAuthStateChanged(async user => {
                 if (user) {
                     currentUser = user;
+
+                    // Check if user is active before proceeding
+                    try {
+                        const userDoc = await db.collection('users').doc(user.uid).get();
+                        if (userDoc.exists && userDoc.data().isActive === false) {
+                            showAlert('Sua conta foi desativada. Você será desconectado.', 'Conta Desativada', () => {
+                                auth.signOut().then(() => {
+                                    window.location.href = 'index.html?reason=deactivated';
+                                });
+                            });
+                            return; // Stop execution
+                        }
+                    } catch (e) {
+                        console.error("Error checking user status:", e);
+                        // Allow to proceed but log the error
+                    }
+
                     await fetchGlobalConfig();
                     
                     setupEventListeners();
@@ -1873,6 +1927,15 @@
 
                     if (editId) {
                         await loadCaptureForEditing(editId);
+                        document.getElementById('form-title').innerText = 'Editar Captação';
+                        // If opened in a popup, change the back button to a close button
+                        if (window.opener) {
+                            document.getElementById('btn-back-to-home').classList.add('hidden');
+                            document.getElementById('btn-close-window').classList.remove('hidden');
+                            document.getElementById('success-btn-home').innerText = 'Fechar Janela';
+                            document.getElementById('success-btn-home').onclick = () => window.close();
+                        }
+
                     } else {
                         // Fetch user name for new forms
                         try {
