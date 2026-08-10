@@ -1063,16 +1063,37 @@
         async function generateSignatureLink(captureId) {
             showGlobalSpinner();
             try {
+                // Primeiro, busca os dados da captação para obter informações não sensíveis
+                const captureDoc = await db.collection('captacoes').doc(captureId).get();
+                if (!captureDoc.exists) {
+                    throw new Error("Documento da captação não encontrado.");
+                }
+                reads++;
+                const captureData = captureDoc.data();
+
                 const token = [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
                 const expires = new Date();
                 expires.setDate(expires.getDate() + 2); // Token expires in 48 hours
+                const expiresTimestamp = firebase.firestore.Timestamp.fromDate(expires);
 
+                // 1. Cria o documento público para o link de assinatura PRIMEIRO
+                const linkRef = db.collection('signature_links').doc(token);
+                await linkRef.set({
+                    captureId: captureId,
+                    expiresAt: expiresTimestamp,
+                    propertyAddress: `${captureData.imovelEndereco || ''}, ${captureData.imovelNumero || 'S/N'} - ${captureData.imovelBairro || ''}`,
+                    ownerName: captureData.propNome || '',
+                    ownerCpf: captureData.propCpf || ''
+                });
+
+                // 2. DEPOIS, atualiza a captação original com o status e token
                 const captureRef = db.collection('captacoes').doc(captureId);
                 await captureRef.update({
                     signatureToken: token,
-                    signatureTokenExpires: firebase.firestore.Timestamp.fromDate(expires),
-                    signatureStatus: 'pending' // Add status
+                    signatureTokenExpires: expiresTimestamp,
+                    signatureStatus: 'pending'
                 });
+
                 writes++;
                 updateCounters();
 
@@ -1085,7 +1106,7 @@
                 fetchAllHistory(); // This will refetch from cache and re-render
             } catch (error) {
                 console.error("Error generating signature link:", error);
-                showAlert('Falha ao gerar o link de assinatura.', 'Erro');
+                showAlert('Falha ao gerar o link de assinatura. Detalhe: ' + error.message, 'Erro');
             } finally {
                 hideGlobalSpinner();
             }

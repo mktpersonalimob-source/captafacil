@@ -194,11 +194,9 @@
             const signatureImage = signaturePad.toDataURL('image/png');
 
             try {
-                const batch = db.batch();
-
                 // 1. Cria o documento da assinatura
                 const signatureRef = db.collection('assinaturas').doc();
-                batch.set(signatureRef, {
+                await signatureRef.set({
                     captureId: captureId,
                     ownerName: ownerName,
                     ownerCpf: ownerCpf,
@@ -209,7 +207,7 @@
 
                 // 2. Atualiza o documento da captação original
                 const captureRef = db.collection('captacoes').doc(captureId);
-                batch.update(captureRef, {
+                await captureRef.update({
                     signatureId: signatureRef.id,
                     signatureStatus: 'signed',
                     signatureToken: firebase.firestore.FieldValue.delete(),
@@ -218,9 +216,7 @@
 
                 // 3. Deleta o link público para que não possa ser usado novamente
                 const linkRef = db.collection('signature_links').doc(token);
-                batch.delete(linkRef);
-
-                await batch.commit();
+                await linkRef.delete();
 
                 showView('success-view');
 
