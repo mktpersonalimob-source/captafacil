@@ -269,7 +269,7 @@
 
             } catch (error) {
                 console.error("Error validating token:", error);
-                showError('Ocorreu um erro ao verificar o link. Tente novamente mais tarde.');
+                showError(`Ocorreu um erro ao verificar o link: ${error.message}. Por favor, solicite um novo link ao corretor.`);
             }
         }
 
