@@ -204,6 +204,7 @@
                     ownerCpf: ownerCpf,
                     signatureImage: signatureImage,
                     signedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    _token: token // Adicionado para validação da regra de segurança
                 });
 
                 // 2. Atualiza o documento da captação original
