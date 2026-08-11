@@ -835,11 +835,13 @@
             <!-- O texto do termo será carregado aqui pelo JavaScript -->
         </div>
 
-        <div class="signature-box" style="justify-content: center; margin-top: 80px;">
-            <div class="signature-line" style="width: 70%; position: relative; padding-bottom: 30px;">
-                <img id="pdf-signature-image" src="" style="position: absolute; bottom: 35px; left: 50%; transform: translateX(-50%); max-height: 60px; max-width: 90%; object-fit: contain;">
+        <div class="signature-box" style="justify-content: center; margin-top: 60px;">
+            <div style="width: 70%; text-align: center; font-size: 9px; font-weight: bold;">
+                <div style="min-height: 65px; border-bottom: 1px solid #000; position: relative; margin-bottom: 2px;">
+                     <img id="pdf-signature-image" src="" style="position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); max-height: 60px; max-width: 90%; object-fit: contain;">
+                </div>
                 Assinatura do Proprietário
-                <div id="pdf-signature-details" style="font-size: 7px; color: #333; margin-top: 2px; line-height: 1.2; font-weight: normal;">
+                <div id="pdf-signature-details" style="font-size: 7px; color: #333; margin-top: 3px; line-height: 1.2; font-weight: normal;">
                     <!-- Details will be injected here -->
                 </div>
             </div>
@@ -1146,6 +1148,32 @@
             });
         }
 
+        function handleSignatureRequest(captureId, isAlreadySigned) {
+            if (isAlreadySigned) {
+                showConfirm(
+                    'Esta captação já possui uma assinatura. Gerar um novo link irá desvincular a assinatura atual e exigir uma nova coleta. Deseja continuar?',
+                    'Atenção: Nova Assinatura',
+                    () => {
+                        // Logic to unlink old signature before generating new one
+                        const captureRef = db.collection('captacoes').doc(captureId);
+                        captureRef.update({
+                            signatureId: firebase.firestore.FieldValue.delete(),
+                            signatureStatus: 'revoked'
+                        }).then(() => {
+                            logActivity('SIGNATURE_REVOKED', { captureId });
+                            historyCache = []; // Invalida o cache para forçar a releitura
+                            generateSignatureLink(captureId); // Gera novo link, que irá recarregar o histórico
+                        }).catch(error => {
+                            console.error("Error revoking signature: ", error);
+                            showAlert('Falha ao revogar a assinatura anterior.', 'Erro');
+                        });
+                    }
+                );
+            } else {
+                generateSignatureLink(captureId);
+            }
+        }
+
         // About Modal Functions
         function openAboutModal() {
             document.getElementById('about-modal').classList.remove('hidden');
@@ -1251,6 +1279,23 @@
                 confirmCallback();
             }
             confirmCallback = null;
+        }
+
+        function copyToClipboard(text, message = 'Copiado!') {
+            navigator.clipboard.writeText(text).then(() => {
+                // Create a temporary toast-like notification
+                const toast = document.createElement('div');
+                toast.innerText = message;
+                toast.className = 'fixed bottom-24 right-5 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg text-sm z-[10000] transition-opacity duration-300';
+                document.body.appendChild(toast);
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    setTimeout(() => toast.remove(), 300);
+                }, 2000);
+            }).catch(err => {
+                console.error('Falha ao copiar:', err);
+                showAlert('Falha ao copiar para a área de transferência.', 'Erro');
+            });
         }
 
         // ========================================================================
@@ -1624,21 +1669,21 @@
                     const tipologia = data.imovelTipologia && data.imovelTipologia.length > 0 ? data.imovelTipologia.join(' / ') : 'Imóvel';
                     const codigoHtml = data.codigoImovel ? ` | Cód: <span class="font-semibold">${data.codigoImovel}</span>` : '';
                     html += `
-                        <div class="bg-white p-3 rounded-xl shadow-sm border flex flex-wrap justify-between items-center gap-x-4 gap-y-2 group hover:border-orange-200 transition-all">
-                            <div class="flex-grow min-w-0">
-                                <div class="flex items-center gap-3 mb-1">
+                <div class="bg-white p-4 rounded-xl shadow-sm border group hover:border-orange-200 transition-all">
+                    <div class="flex justify-between items-start gap-3">
+                        <div class="flex-grow min-w-0">
                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                                        ${(data.tipoCaptacao === 'Ambos' || data.tipoCaptacao === 'Venda e Aluguel') ? 'Venda e Aluguel' : data.tipoCaptacao || 'N/D'}
+                                ${tipoCaptacao}
                                     </span>
-                                    <p class="font-bold text-gray-800 truncate" title="${tipologia} - ${data.imovelBairro || 'Bairro'}, ${data.imovelNumero || 'S/N'}">${tipologia} - ${data.imovelBairro || 'Bairro'}, ${data.imovelNumero || 'S/N'}</p>
+                            <h4 class="font-bold text-gray-800 truncate mt-2" title="${tipologia} - ${data.imovelBairro || 'Bairro'}">${tipologia} - ${data.imovelBairro || 'Bairro'}</h4>
+                            <p class="text-sm text-gray-600 truncate" title="${data.propNome || 'Não informado'}">Prop.: ${data.propNome || 'Não informado'}</p>
                                 </div>
-                                <div>
-                                    <p class="text-sm text-gray-600 truncate">Proprietário: <span class="font-medium">${data.propNome || 'Não informado'}</span></p>
-                                    <p class="text-xs text-gray-400 mt-0.5">ID: ${doc.id.substring(0, 6).toUpperCase()}${codigoHtml} | Em: ${date}</p>
+                        <div class="text-right shrink-0">
+                            <p class="text-xs text-gray-500 font-medium">${date}</p>
+                            <p class="text-xs text-gray-400 mt-1 font-mono">ID: ${doc.id.substring(0, 6).toUpperCase()}</p>
+                            ${data.codigoImovel ? `<p class="text-xs text-gray-400 mt-0.5 font-mono">Cód: ${data.codigoImovel}</p>` : ''}
                                 </div>
                             </div>
-                            <!-- Botões de ação foram removidos desta visualização -->
-                            <div class="flex items-center gap-2 shrink-0"></div>
                         </div>
                     `;
                 });
@@ -1648,57 +1693,6 @@
                 display.innerHTML = '<p class="text-red-500">Erro ao carregar dados.</p>';
                 recentCapturesListener = null;
             });
-        }
-
-        async function showSignatureStatus(captureId, signatureId) {
-            const modal = document.getElementById('signature-status-modal');
-            const content = document.getElementById('signature-status-content');
-            modal.classList.remove('hidden');
-            content.innerHTML = '<p class="animate-pulse">Carregando dados da assinatura...</p>';
-
-            if (signatureId && signatureId !== 'undefined' && signatureId !== 'null') {
-                // Fetch signature details
-                try {
-                    const sigDoc = await db.collection('assinaturas').doc(signatureId).get();
-                    reads++;
-                    updateCounters();
-                    if (sigDoc.exists) {
-                        const sigData = sigDoc.data();
-                        const signedDate = new Date(sigData.signedAt.seconds * 1000).toLocaleString('pt-BR');
-                        content.innerHTML = `
-                            <p><strong>Status:</strong> <span class="font-semibold text-green-600">Assinado Digitalmente</span></p>
-                            <p><strong>Proprietário:</strong> ${sigData.ownerName}</p>
-                            <p><strong>CPF:</strong> ${sigData.ownerCpf}</p>
-                            <p><strong>Data da Assinatura:</strong> ${signedDate}</p>
-                            <p><strong>Endereço IP:</strong> ${sigData.ipAddress || 'Não registrado'}</p>
-                        `;
-                    } else {
-                        content.innerHTML = '<p class="text-red-500">Erro: Documento de assinatura não encontrado, mas a captação está marcada como assinada. Por favor, contate o suporte.</p>';
-                    }
-                } catch(e) {
-                    content.innerHTML = '<p class="text-red-500">Falha ao carregar dados da assinatura.</p>';
-                }
-            } else {
-                // Check if pending
-                try {
-                    const capDoc = await db.collection('captacoes').doc(captureId).get();
-                    reads++;
-                    updateCounters();
-                    if (capDoc.exists && capDoc.data().signatureStatus === 'pending') {
-                        const expiresDate = new Date(capDoc.data().signatureTokenExpires.seconds * 1000).toLocaleString('pt-BR');
-                        content.innerHTML = `
-                            <p><strong>Status:</strong> <span class="font-semibold text-yellow-600">Aguardando Assinatura</span></p>
-                            <p>Um link para assinatura foi gerado e está aguardando a ação do proprietário.</p>
-                            <p><strong>Link expira em:</strong> ${expiresDate}</p>
-                        `;
-                    } else {
-                        content.innerHTML = '<p><strong>Status:</strong> <span class="font-semibold text-gray-600">Não Assinado</span></p><p>Nenhum link de assinatura foi gerado para esta captação ainda.</p>';
-                    }
-                } catch(e) {
-                    console.error("Error checking capture status:", e);
-                    content.innerHTML = '<p class="text-red-500">Falha ao verificar o status da captação.</p>';
-                }
-            }
         }
 
         function editCapture(id) {
@@ -1961,13 +1955,24 @@
             const tipoCaptacao = (data.tipoCaptacao === 'Ambos' || data.tipoCaptacao === 'Venda e Aluguel') ? 'Venda e Aluguel' : data.tipoCaptacao || 'N/D';
             const tipologia = (data.imovelTipologia && data.imovelTipologia.length > 0 ? data.imovelTipologia.join(' / ') : 'Imóvel');
             const codigoImovelBadge = data.codigoImovel ? `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Cód: ${data.codigoImovel}</span>` : '';
-            const isSigned = data.signatureId;
+            const isSigned = data.signatureId && data.signatureStatus === 'signed';
 
-            let signatureBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Não Assinado</span>';
+            let signatureBadge;
             if (isSigned) {
-                signatureBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Assinado Digitalmente</span>`;
+                signatureBadge = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+                    Assinado
+                </span>`;
             } else if (data.signatureStatus === 'pending') {
-                signatureBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Aguardando Assinatura</span>`;
+                signatureBadge = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clip-rule="evenodd" /></svg>
+                    Pendente
+                </span>`;
+            } else {
+                signatureBadge = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
+                    Não Assinado
+                </span>`;
             }
 
             return `
@@ -1976,8 +1981,8 @@
                         <button type="button" onclick="showSignatureStatus('${data.id}', '${data.signatureId}')" class="focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 rounded-full" title="Ver status da assinatura">${signatureBadge}</button>
                     </div>
                     <!-- Header: Tipo, Tipologia e Endereço -->
-                    <div>
-                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2 pr-24">
+                    <div class="pr-28 sm:pr-32">
+                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2">
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-800">
                                 ${tipoCaptacao}
                             </span>
@@ -2003,12 +2008,11 @@
                             </div>
                             <div class="flex items-center gap-2">
                                 <span class="font-medium">ID:</span>
-                                <span class="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-xs">${data.id.substring(0, 6).toUpperCase()}</span>
+                                <span onclick="copyToClipboard('${data.id}', 'ID da Captação copiado!')" title="Clique para copiar o ID: ${data.id}" class="cursor-pointer font-mono bg-gray-100 px-1.5 py-0.5 rounded text-xs hover:bg-gray-200 transition-colors">${data.id.substring(0, 6).toUpperCase()}</span>
                                 ${codigoImovelBadge}
                             </div>
                         </div>
                     </div>
-        
                     <!-- Actions: Buttons -->
                     <div class="pt-4 border-t border-gray-200 flex flex-col sm:flex-row gap-2">
                         <button onclick="editCapture('${data.id}')" class="w-full sm:w-auto flex-1 px-4 py-2 bg-blue-500 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 flex items-center justify-center gap-2">
@@ -2019,7 +2023,7 @@
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>
                             <span>Gerar PDF</span>
                         </button>
-                        <button onclick="handleSignatureRequest('${data.id}', ${!!isSigned})" class="w-full sm:w-auto flex-1 px-4 py-2 bg-purple-600 text-white text-sm font-semibold rounded-lg hover:bg-purple-700 flex items-center justify-center gap-2">
+                        <button onclick="handleSignatureRequest('${data.id}', ${isSigned})" class="w-full sm:w-auto flex-1 px-4 py-2 bg-purple-600 text-white text-sm font-semibold rounded-lg hover:bg-purple-700 flex items-center justify-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L14.732 3.732z" /></svg>
                             <span>${isSigned ? 'Solicitar Nova Assinatura' : 'Coletar Assinatura'}</span>
                         </button>
