@@ -1307,10 +1307,10 @@
         function setGreetingMessage(userName, userData) {
             const greetingEl = document.getElementById('greeting-message');
             if (!greetingEl) return;
+            const hoje = new Date();
 
             // Birthday check
             if (userData && userData.dataNascimento) {
-                const hoje = new Date();
                 const aniversario = new Date(userData.dataNascimento + 'T00:00:00');
                 if (hoje.getDate() === aniversario.getDate() && hoje.getMonth() === aniversario.getMonth()) {
                     greetingEl.innerHTML = `
@@ -1326,10 +1326,29 @@
                 }
             }
 
-            const now = new Date(); // Moved down
-            const hour = now.getHours();
-            const dayOfWeek = now.getDay(); // 0=Sun, 2=Tue
-            const dayOfMonth = now.getDate();
+            // Work Anniversary check
+            if (userData && userData.dataEntrada) {
+                const aniversarioEmpresa = new Date(userData.dataEntrada + 'T00:00:00');
+                if (hoje.getDate() === aniversarioEmpresa.getDate() && hoje.getMonth() === aniversarioEmpresa.getMonth()) {
+                    const anosDeEmpresa = hoje.getFullYear() - aniversarioEmpresa.getFullYear();
+                    if (anosDeEmpresa > 0) { // Não mostra no primeiro dia de empresa
+                        greetingEl.innerHTML = `
+                            <div class="flex items-center gap-3">
+                                <span class="text-2xl">🎉</span>
+                                <div>
+                                    <h2 class="text-xl font-bold text-gray-800">Feliz Aniversário de Empresa!</h2>
+                                    <p class="text-blue-600 font-semibold">Parabéns, ${userName.split(' ')[0]}, por seus ${anosDeEmpresa} anos conosco!</p>
+                                </div>
+                            </div>
+                        `;
+                        return; // Para a execução para não mostrar a saudação normal
+                    }
+                }
+            }
+
+            const hour = hoje.getHours();
+            const dayOfWeek = hoje.getDay(); // 0=Sun, 2=Tue
+            const dayOfMonth = hoje.getDate();
         
             let greetingText = '';
             let iconSvg = '';
