@@ -837,24 +837,74 @@
     <!-- ======================================================================== -->
     <!-- MODAL DE AJUDA -->
     <!-- ======================================================================== -->
-    <div id="help-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 transform transition-transform scale-100">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg leading-6 font-medium text-gray-900">Como Usar o Sistema CaptaFácil</h3>
-                <button onclick="closeHelpModal()" class="text-gray-400 hover:text-gray-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+    <div id="help-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 transition-opacity duration-300 opacity-0">
+        <div id="help-modal-content" class="bg-gray-50 rounded-xl shadow-2xl max-w-2xl w-full transform transition-all duration-300 scale-95 opacity-0">
+            <!-- Header -->
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div class="bg-green-100 p-2 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800">Guia Rápido do CaptaFácil</h3>
+                </div>
+                <button onclick="closeHelpModal()" class="text-gray-400 hover:text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full p-1.5 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
             </div>
-            <div class="text-sm text-gray-600 space-y-4 max-h-[70vh] overflow-y-auto pr-4">
-                <p><strong>1. Nova Captação:</strong> Clique em "Nova Captação" para iniciar o preenchimento de uma ficha de imóvel. O formulário é dividido em etapas para facilitar.</p>
-                <p><strong>2. Minhas Captações:</strong> Acesse o histórico de todas as suas captações. Você pode buscar, filtrar, editar, gerar PDF e solicitar assinaturas a partir desta tela.</p>
-                <p><strong>3. Gerar PDF:</strong> Em "Minhas Captações", cada item tem um botão "Gerar PDF". Isso cria a ficha oficial, idêntica à planilha, pronta para impressão ou envio.</p>
-                <p><strong>4. Coletar Assinatura Digital:</strong> Use o botão "Coletar Assinatura" para gerar um link único. Envie este link para o proprietário, que poderá assinar digitalmente de qualquer dispositivo. O link expira em 48 horas.</p>
-                <p><strong>5. Status da Assinatura:</strong> Você pode verificar o status da assinatura (Pendente, Assinado, etc.) clicando no selo de status em cada captação no seu histórico.</p>
-                <p><strong>6. Fale Conosco:</strong> Use o botão "Enviar Mensagem" para enviar sugestões ou relatar problemas diretamente para a administração do sistema.</p>
+
+            <!-- Content -->
+            <div class="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-orange-100 text-orange-600 rounded-full font-bold">1</div>
+                    <div>
+                        <h4 class="font-bold text-gray-800">Nova Captação</h4>
+                        <p class="text-sm text-gray-600 mt-1">Clique em "Nova Captação" para iniciar o preenchimento de uma ficha de imóvel. O formulário é dividido em etapas para facilitar.</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-orange-100 text-orange-600 rounded-full font-bold">2</div>
+                    <div>
+                        <h4 class="font-bold text-gray-800">Minhas Captações</h4>
+                        <p class="text-sm text-gray-600 mt-1">Acesse o histórico de todas as suas captações. Você pode buscar, filtrar, editar, gerar PDF e solicitar assinaturas a partir desta tela.</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-orange-100 text-orange-600 rounded-full font-bold">3</div>
+                    <div>
+                        <h4 class="font-bold text-gray-800">Gerar PDF</h4>
+                        <p class="text-sm text-gray-600 mt-1">Em "Minhas Captações", cada item tem um botão "Gerar PDF". Isso cria a ficha oficial, idêntica à planilha, pronta para impressão ou envio.</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-orange-100 text-orange-600 rounded-full font-bold">4</div>
+                    <div>
+                        <h4 class="font-bold text-gray-800">Coletar Assinatura Digital</h4>
+                        <p class="text-sm text-gray-600 mt-1">Use o botão "Coletar Assinatura" para gerar um link único. Envie este link para o proprietário, que poderá assinar digitalmente de qualquer dispositivo. O link expira em 48 horas.</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-orange-100 text-orange-600 rounded-full font-bold">5</div>
+                    <div>
+                        <h4 class="font-bold text-gray-800">Status da Assinatura</h4>
+                        <p class="text-sm text-gray-600 mt-1">Você pode verificar o status da assinatura (Pendente, Assinado, etc.) clicando no selo de status em cada captação no seu histórico.</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-orange-100 text-orange-600 rounded-full font-bold">6</div>
+                    <div>
+                        <h4 class="font-bold text-gray-800">Fale Conosco</h4>
+                        <p class="text-sm text-gray-600 mt-1">Use o botão "Enviar Mensagem" para enviar sugestões ou relatar problemas diretamente para a administração do sistema.</p>
+                    </div>
+                </div>
             </div>
-            <div class="mt-5 text-right">
-                <button onclick="closeHelpModal()" class="px-4 py-2 bg-orange-600 text-white font-medium rounded-lg shadow hover:bg-orange-700">Entendi</button>
+
+            <!-- Footer -->
+            <div class="bg-white px-6 py-4 border-t border-gray-200 text-right rounded-b-xl">
+                <button onclick="closeHelpModal()" class="px-5 py-2 bg-orange-600 text-white font-semibold rounded-lg shadow-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all">
+                    Entendi
+                </button>
             </div>
         </div>
     </div>
@@ -886,7 +936,7 @@
                 <span id="firebase-counter-display" class="font-semibold text-gray-700">0/0</span>
             </span>
             </div>
-            <span class="text-gray-400 font-mono">2.0 beta</span>
+            <span class="text-gray-400 font-mono">1.5 beta</span>
             <button onclick="logout()" title="Sair do sistema" class="px-3 py-1 bg-red-500 text-white font-semibold rounded-lg shadow hover:bg-red-600 focus:ring-2 focus:ring-red-500 transition-all flex items-center gap-1">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75"/>
@@ -1165,11 +1215,29 @@
         }
 
         function openHelpModal() {
-            document.getElementById('help-modal').classList.remove('hidden');
+            const modal = document.getElementById('help-modal');
+            const modalContent = document.getElementById('help-modal-content');
+            if (!modal || !modalContent) return;
+
+            modal.classList.remove('hidden');
+            // Use a short timeout to allow the display property to change before starting the transition
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modalContent.classList.remove('scale-95', 'opacity-0');
+            }, 10);
         }
 
         function closeHelpModal() {
-            document.getElementById('help-modal').classList.add('hidden');
+            const modal = document.getElementById('help-modal');
+            const modalContent = document.getElementById('help-modal-content');
+            if (!modal || !modalContent) return;
+
+            modal.classList.add('opacity-0');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            // Wait for the transition to finish before hiding the modal
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300); // Should match the duration of the transition
         }
 
         async function generatePDFFromHistory(button, captureData) {
