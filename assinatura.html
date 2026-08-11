@@ -61,8 +61,8 @@
                 <input type="text" id="owner-name" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500">
             </div>
             <div>
-                <label for="owner-cpf" class="block text-sm font-medium text-gray-700">CPF *</label>
-                <input type="text" id="owner-cpf" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500" placeholder="000.000.000-00">
+                <label for="owner-cpf" class="block text-sm font-medium text-gray-700">CPF (Opcional)</label>
+                <input type="text" id="owner-cpf" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500" placeholder="000.000.000-00">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">Assinatura *</label>
@@ -177,8 +177,8 @@
             const ownerName = document.getElementById('owner-name').value.trim();
             const ownerCpf = document.getElementById('owner-cpf').value.trim();
 
-            if (!ownerName || !ownerCpf) {
-                alert('Por favor, preencha seu nome completo e CPF.');
+            if (!ownerName) {
+                alert('Por favor, preencha seu nome completo.');
                 return;
             }
 
