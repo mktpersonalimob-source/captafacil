@@ -976,14 +976,32 @@
         }
 
         async function deleteCapture(id) {
-            showConfirm('Tem certeza que deseja EXCLUIR permanentemente esta captação? Esta ação não pode ser desfeita.', 'Confirmar Exclusão Permanente', async () => {
+            showConfirm('Tem certeza que deseja EXCLUIR permanentemente esta captação e sua assinatura associada (se houver)? Esta ação não pode ser desfeita.', 'Confirmar Exclusão Permanente', async () => {
                 try {
                     resetInactivityTimer();
-                    await db.collection('captacoes').doc(id).delete();
-                    loadCapturesPage(); // Recarrega a página atual
-                    writes++;
+                    const captureRef = db.collection('captacoes').doc(id);
+                    const captureDoc = await captureRef.get();
+                    reads++; // Conta a leitura
+
+                    const batch = db.batch();
+
+                    // Adiciona a exclusão da captação ao batch
+                    batch.delete(captureRef);
+
+                    let deletedSignatureId = null;
+                    // Se houver uma assinatura associada, adiciona sua exclusão ao batch
+                    if (captureDoc.exists && captureDoc.data().signatureId) {
+                        const signatureId = captureDoc.data().signatureId;
+                        deletedSignatureId = signatureId;
+                        const signatureRef = db.collection('assinaturas').doc(signatureId);
+                        batch.delete(signatureRef);
+                    }
+
+                    await batch.commit();
+                    writes++; // Conta o batch como uma escrita
                     updateCounters();
-                    logActivity('CAPTURE_DELETED', { captureId: id });
+                    logActivity('CAPTURE_DELETED', { captureId: id, deletedSignatureId: deletedSignatureId });
+                    loadCapturesPage(); // Recarrega a página atual
                 } catch (error) {
                     showAlert('Falha ao excluir a captação.', 'Erro');
                 }
