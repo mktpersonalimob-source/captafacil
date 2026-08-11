@@ -1136,7 +1136,7 @@
                 document.getElementById('signature-link-modal').classList.remove('hidden');
                 
                 logActivity('SIGNATURE_LINK_GENERATED', { captureId });
-                fetchAllHistory(); // This will refetch from cache and re-render
+                historyCache = []; // Invalida o cache. Será recarregado quando a visualização for aberta ou atualizada.
             } catch (error) {
                 console.error("Error generating signature link:", error);
                 showAlert('Falha ao gerar o link de assinatura. Detalhe: ' + error.message, 'Erro');
@@ -1152,6 +1152,91 @@
             }, () => {
                 showAlert('Falha ao copiar o link.', 'Erro');
             });
+        }
+
+        function openHelpModal() {
+            document.getElementById('help-modal').classList.remove('hidden');
+        }
+
+        function closeHelpModal() {
+            document.getElementById('help-modal').classList.add('hidden');
+        }
+
+        async function generatePDFFromHistory(button, captureData) {
+            let signatureData = null;
+            if (captureData.signatureId && captureData.signatureStatus === 'signed') {
+                showGlobalSpinner();
+                try {
+                    const sigDoc = await db.collection('assinaturas').doc(captureData.signatureId).get();
+                    reads++;
+                    updateCounters();
+                    if (sigDoc.exists) {
+                        signatureData = sigDoc.data();
+                    }
+                } catch (e) {
+                    console.error("Error fetching signature for PDF:", e);
+                    showAlert('Não foi possível carregar os dados da assinatura para o PDF.', 'Erro');
+                    hideGlobalSpinner();
+                    return; // Não prosseguir se a busca da assinatura falhar
+                }
+            }
+            await generatePDF(captureData, button, signatureData);
+        }
+
+        async function showSignatureStatus(captureId, signatureId) {
+            const modal = document.getElementById('signature-status-modal');
+            const content = document.getElementById('signature-status-content');
+            
+            modal.classList.remove('hidden');
+            content.innerHTML = '<p class="animate-pulse">Carregando dados da assinatura...</p>';
+
+            if (!signatureId || signatureId === 'undefined' || signatureId === 'null') {
+                // Verifica o documento de captação para o status pendente
+                try {
+                    const captureDoc = await db.collection('captacoes').doc(captureId).get();
+                    reads++;
+                    updateCounters();
+                    if (captureDoc.exists && captureDoc.data().signatureStatus === 'pending') {
+                         const expiryDate = captureDoc.data().signatureTokenExpires ? new Date(captureDoc.data().signatureTokenExpires.seconds * 1000).toLocaleString('pt-BR') : 'N/A';
+                         content.innerHTML = `<p>Um link de assinatura foi gerado e está aguardando o proprietário assinar.</p><p class="text-sm text-gray-500 mt-2">O link expira em: ${expiryDate}</p>`;
+                    } else {
+                         content.innerHTML = '<p>Esta captação ainda não possui uma assinatura digital solicitada ou vinculada.</p>';
+                    }
+                } catch (e) {
+                     content.innerHTML = '<p>Esta captação ainda não possui uma assinatura digital vinculada.</p>';
+                }
+                return;
+            }
+
+            try {
+                const sigDoc = await db.collection('assinaturas').doc(signatureId).get();
+                reads++;
+                updateCounters();
+
+                if (!sigDoc.exists) {
+                    content.innerHTML = `<p class="text-red-500">Erro: A assinatura vinculada (ID: ${signatureId}) não foi encontrada no banco de dados.</p>`;
+                    return;
+                }
+
+                const sigData = sigDoc.data();
+                const signedDate = sigData.signedAt ? new Date(sigData.signedAt.seconds * 1000).toLocaleString('pt-BR') : 'Data não registrada';
+
+                content.innerHTML = `
+                    <p><strong>Proprietário:</strong> ${sigData.ownerName}</p>
+                    <p><strong>CPF:</strong> ${sigData.ownerCpf}</p>
+                    <p><strong>Data da Assinatura:</strong> ${signedDate}</p>
+                    <p><strong>Endereço IP:</strong> ${sigData.clientIp || 'Não registrado'}</p>
+                    <div class="mt-4 pt-4 border-t">
+                        <p class="font-semibold mb-2">Assinatura:</p>
+                        <div class="bg-gray-100 border rounded-md p-2 flex justify-center">
+                            <img src="${sigData.signatureImage}" alt="Assinatura" class="h-20 object-contain">
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error("Erro ao buscar status da assinatura:", error);
+                content.innerHTML = '<p class="text-red-500">Ocorreu um erro ao buscar os detalhes da assinatura.</p>';
+            }
         }
 
         function handleSignatureRequest(captureId, isAlreadySigned) {
