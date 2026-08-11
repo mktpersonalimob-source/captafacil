@@ -387,7 +387,7 @@
             </button>
             <button onclick="showView('history-view')" class="group text-left p-6 bg-white border border-gray-200 rounded-xl shadow-lg hover:shadow-xl hover:border-orange-300 transition-all transform hover:scale-105">
                 <div class="flex items-center gap-4 mb-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
                     <h2 class="text-2xl font-bold text-gray-800">Minhas Captações</h2>
                 </div>
                 <p class="text-gray-600 ml-14">Visualize, edite e gerencie todas as suas captações.</p>
@@ -573,7 +573,7 @@
                 <span id="btn-toggle-filters-text">Mostrar Filtros</span>
             </button>
             <div id="filters-container" class="hidden md:block p-4 bg-gray-50 rounded-lg border">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
                     <!-- Coluna 1: Busca Principal (ocupa 2 colunas no lg) -->
                     <div class="lg:col-span-2">
                         <label for="search-input" class="text-sm font-medium text-gray-700">Buscar por Endereço, ID, CPF ou Proprietário:</label>
@@ -600,15 +600,22 @@
     
                     <!-- Coluna 3: Filtro por Data -->
                     <div>
-                        <label for="filter-date" class="text-sm font-medium text-gray-700">Filtrar por data:</label>
-                        <div class="relative mt-1">
-                            <input type="date" id="filter-date" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm pr-8">
-                            <button id="btn-clear-date-filter" title="Limpar filtro" class="hidden absolute inset-y-0 right-0 px-2 flex items-center text-gray-400 hover:text-gray-600">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
+                        <label for="filter-date-start" class="text-sm font-medium text-gray-700">Data de Início:</label>
+                        <input type="date" id="filter-date-start" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="filter-date-end" class="text-sm font-medium text-gray-700">Data Final:</label>
+                        <input type="date" id="filter-date-end" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm">
+                    </div>
+
+                    <!-- Coluna 4: Filtro de Assinatura -->
+                    <div>
+                        <label for="filter-signature" class="text-sm font-medium text-gray-700">Assinatura:</label>
+                        <select id="filter-signature" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm">
+                            <option value="all">Todos</option>
+                            <option value="signed">Assinadas</option>
+                            <option value="not_signed">Não Assinadas</option>
+                        </select>
                     </div>
                 </div>
     
@@ -679,14 +686,12 @@
         </div>
 
         <!-- Carregar Mais -->
-        <div id="load-more-container" class="text-center mt-8 hidden">
-            <button id="btn-load-more" class="px-6 py-2 bg-orange-100 text-orange-800 font-semibold rounded-lg hover:bg-orange-200 transition-all flex items-center gap-2 mx-auto">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd" /></svg>
-                <span>Carregar Mais</span>
-            </button>
+        <div id="pagination-container" class="hidden mt-8 flex justify-between items-center text-sm">
+            <button id="btn-prev-page" class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">&larr; Anterior</button>
+            <span id="page-info" class="font-medium text-gray-600"></span>
+            <button id="btn-next-page" class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Próxima &rarr;</button>
         </div>
     </div>
-
     <!-- 
     ========================================================================
     MOLDE DO PDF (Fica invisível na tela web, mas é renderizado na geração)
@@ -1543,7 +1548,7 @@
 
         // Contadores de Leitura/Escrita
         let displayedItems = [];
-        const pageSize = 10;
+        const pageSize = 5;
         let currentPage = 1;
 
 
@@ -1605,30 +1610,57 @@
             const noticesDisplay = document.getElementById('admin-notices-display');
             if (noticesListener) return; // Listener já está ativo
 
+            // 1. Fetch all users to check for birthdays
+            let birthdayHtml = '';
+            try {
+                const usersSnapshot = await db.collection('users').get();
+                reads++; // Count this read
+                const hoje = new Date();
+                usersSnapshot.forEach(doc => {
+                    const user = doc.data();
+                    if (user.dataNascimento) {
+                        const aniversario = new Date(user.dataNascimento + 'T00:00:00');
+                        if (hoje.getDate() === aniversario.getDate() && hoje.getMonth() === aniversario.getMonth()) {
+                            const userName = `${user.nome || ''} ${user.sobrenome || ''}`.trim();
+                            birthdayHtml += `
+                                <div class="border-l-4 border-pink-400 pl-3 mb-3">
+                                    <p class="text-pink-800 font-semibold">🎂 Feliz Aniversário, ${userName}!</p>
+                                    <p class="text-xs text-pink-600 mt-1">A equipe deseja um dia incrível para você!</p>
+                                </div>
+                            `;
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error("Error fetching users for birthday check:", e);
+            }
+
+            // 2. Set up listener for regular notices
             const query = db.collection('avisos').orderBy('createdAt', 'desc').limit(5);
             
             noticesListener = query.onSnapshot(snapshot => {
                 reads++;
                 updateCounters();
 
-                if (snapshot.empty) {
-                    noticesDisplay.innerHTML = '<p class="text-blue-600">Nenhum recado da administração no momento.</p>';
-                    return;
-                }
-
-                noticesDisplay.innerHTML = ''; // Limpa a lista para redesenhar
                 let noticesHtml = '';
                 snapshot.forEach(doc => {
                     const notice = doc.data();
                     const date = new Date(notice.createdAt.seconds * 1000).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
                     noticesHtml += `
-                        <div class="border-l-4 border-blue-300 pl-3">
+                        <div class="border-l-4 border-blue-300 pl-3 mb-3">
                             <p class="text-blue-800">${notice.text}</p>
                             <p class="text-xs text-blue-500 mt-1">Publicado em: ${date}</p>
                         </div>
                     `;
                 });
-                noticesDisplay.innerHTML = noticesHtml;
+
+                // Combine birthday and regular notices
+                if (snapshot.empty && !birthdayHtml) {
+                    noticesDisplay.innerHTML = '<p class="text-blue-600">Nenhum recado da administração no momento.</p>';
+                } else {
+                    noticesDisplay.innerHTML = birthdayHtml + noticesHtml;
+                }
+
             }, error => {
                 console.error("Erro no listener de avisos:", error);
                 noticesDisplay.innerHTML = '<p class="text-red-500">Erro ao carregar recados.</p>';
@@ -1780,6 +1812,29 @@
                             ${data.codigoImovel ? `<p class="text-xs text-gray-400 mt-0.5 font-mono">Cód: ${data.codigoImovel}</p>` : ''}
                                 </div>
                             </div>
+                            <div class="flex flex-wrap items-center gap-2 mt-2">
+                                ${(() => {
+                                    const isSigned = data.signatureId && data.signatureStatus === 'signed';
+                                    let signatureBadgeHtml;
+                                    if (isSigned) {
+                                        signatureBadgeHtml = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+                                            Assinado
+                                        </span>`;
+                                    } else if (data.signatureStatus === 'pending') {
+                                        signatureBadgeHtml = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clip-rule="evenodd" /></svg>
+                                            Pendente
+                                        </span>`;
+                                    } else {
+                                        signatureBadgeHtml = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
+                                            Não Assinado
+                                        </span>`;
+                                    }
+                                    return signatureBadgeHtml;
+                                })()}
+                            </div>
                         </div>
                     `;
                 });
@@ -1841,43 +1896,65 @@
             }
         }
 
-        function renderHistory(items) {
+        function renderCurrentPage() {
             const historyList = document.getElementById('history-list');
             const noDataEl = document.getElementById('history-no-data');
             const loadingEl = document.getElementById('history-loading');
-            const loadMoreContainer = document.getElementById('load-more-container');
+            const paginationContainer = document.getElementById('pagination-container');
+            const pageInfoEl = document.getElementById('page-info');
+            const prevBtn = document.getElementById('btn-prev-page');
+            const nextBtn = document.getElementById('btn-next-page');
 
             if (loadingEl) loadingEl.style.display = 'none';
             historyList.innerHTML = '';
 
-            if (items.length === 0) {
+            if (currentFilteredItems.length === 0) {
                 noDataEl.classList.remove('hidden');
                 historyList.classList.add('hidden');
+                paginationContainer.classList.add('hidden');
             } else {
                 noDataEl.classList.add('hidden');
                 historyList.classList.remove('hidden');
-                if (loadMoreContainer) loadMoreContainer.classList.add('hidden'); // Hide load more button for filtered results
-                items.forEach(item => {
+                paginationContainer.classList.remove('hidden');
+
+                const totalPages = Math.ceil(currentFilteredItems.length / pageSize);
+                const startIndex = (currentPage - 1) * pageSize;
+                const endIndex = startIndex + pageSize;
+                const pageItems = currentFilteredItems.slice(startIndex, endIndex);
+
+                pageItems.forEach(item => {
                     const itemHtml = createHistoryItemHtml(item);
                     historyList.insertAdjacentHTML('beforeend', itemHtml);
                 });
+
+                pageInfoEl.innerText = `Página ${currentPage} de ${totalPages}`;
+                prevBtn.disabled = currentPage === 1;
+                nextBtn.disabled = currentPage === totalPages;
             }
         }
 
         function applyFiltersAndSearch() {
             showGlobalSpinner(); //
             const searchTerm = document.getElementById('search-input').value.toLowerCase();
-            const filterDate = document.getElementById('filter-date').value;
+            const filterDateStart = document.getElementById('filter-date-start').value;
+            const filterDateEnd = document.getElementById('filter-date-end').value;
             const sortBy = document.getElementById('sort-by').value; // New sort option
+            const signatureStatus = document.getElementById('filter-signature').value;
             
             let filteredData = historyCache;
 
-            // Apply date filter
-            if (filterDate) {
+            // Apply date range filter
+            if (filterDateStart || filterDateEnd) {
+                const startDate = filterDateStart ? new Date(filterDateStart + 'T00:00:00') : null;
+                const endDate = filterDateEnd ? new Date(filterDateEnd + 'T23:59:59') : null;
+
                 filteredData = filteredData.filter(item => {
-                    if (!item.createdAt) return false;
-                    const itemDate = new Date(item.createdAt.seconds * 1000).toISOString().split('T')[0];
-                    return itemDate === filterDate;
+                    if (!item.createdAt || !item.createdAt.seconds) return false;
+                    const itemDate = new Date(item.createdAt.seconds * 1000);
+                    
+                    if (startDate && itemDate < startDate) return false;
+                    if (endDate && itemDate > endDate) return false;
+                    return true;
                 });
             }
 
@@ -1902,6 +1979,16 @@
                 });
             }
             
+            // Apply signature status filter
+            if (signatureStatus !== 'all') {
+                filteredData = filteredData.filter(item => {
+                    const isSigned = item.signatureStatus === 'signed';
+                    if (signatureStatus === 'signed') return isSigned;
+                    if (signatureStatus === 'not_signed') return !isSigned;
+                    return true;
+                });
+            }
+
             // Apply advanced filters from modal
             const advancedFiltersForm = document.getElementById('advanced-filters-form');
             if (advancedFiltersForm) {
@@ -1948,8 +2035,10 @@
                 return 0;
             });
             
-            renderHistory(filteredData);
-            hideGlobalSpinner(); //
+            currentFilteredItems = filteredData;
+            currentPage = 1; // Reseta para a primeira página a cada nova busca
+            renderCurrentPage();
+            hideGlobalSpinner();
         }
         
         function createHistoryItemHtml(data) {
@@ -2078,21 +2167,18 @@
             document.getElementById('btn-clear-search').addEventListener('click', () => {
                 document.getElementById('search-input').value = '';
                 document.getElementById('sort-by').value = 'createdAt_desc';
-                document.getElementById('filter-date').value = '';
-                document.getElementById('btn-clear-date-filter').classList.add('hidden');
-                clearAdvancedFilters();
+                document.getElementById('filter-date-start').value = '';
+                document.getElementById('filter-date-end').value = '';
+                document.getElementById('filter-signature').value = 'all';
+                // Limpa o formulário de filtros avançados e aplica a busca com os campos limpos
+                document.getElementById('advanced-filters-form').reset();
+                applyFiltersAndSearch();
             });
             document.getElementById('search-input').addEventListener('keyup', (event) => { if (event.key === 'Enter') applyFiltersAndSearch(); });
-            document.getElementById('filter-date').addEventListener('change', () => {
-                document.getElementById('btn-clear-date-filter').classList.toggle('hidden', !document.getElementById('filter-date').value);
-                applyFiltersAndSearch();
-            });
-            document.getElementById('btn-clear-date-filter').addEventListener('click', () => {
-                document.getElementById('filter-date').value = '';
-                document.getElementById('btn-clear-date-filter').classList.add('hidden');
-                applyFiltersAndSearch();
-            });
+            document.getElementById('filter-date-start').addEventListener('change', applyFiltersAndSearch);
+            document.getElementById('filter-date-end').addEventListener('change', applyFiltersAndSearch);
             document.getElementById('sort-by').addEventListener('change', applyFiltersAndSearch);
+            document.getElementById('filter-signature').addEventListener('change', applyFiltersAndSearch);
             document.getElementById('btn-open-advanced-filters').addEventListener('click', openAdvancedFilterModal);
             document.getElementById('btn-refresh-db').addEventListener('click', () => {
                 historyCache = [];

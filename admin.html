@@ -284,6 +284,7 @@
                     <div>
                         <label for="captures-search-field" class="block text-sm font-medium text-gray-700">Buscar no campo</label>
                         <select id="captures-search-field" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 bg-white">
+                            <option value="id">ID da Captação</option>
                             <option value="propNome">Nome do Proprietário</option>
                             <option value="imovelEndereco">Endereço do Imóvel</option>
                             <option value="propCpf">CPF do Proprietário</option>
@@ -324,6 +325,9 @@
                 </button>
             </header>
             <div id="audit-log-list" class="space-y-2"></div>
+            <div id="audit-load-more-container" class="text-center mt-6 hidden">
+                <button id="btn-audit-load-more" class="px-4 py-2 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50">Carregar Mais</button>
+            </div>
         </div>
 
         <!-- MONITOR DE ACESSO -->
@@ -545,6 +549,9 @@
                 document.getElementById('relink-modal').classList.add('hidden');
                 relinkConfirmCallback = null;
             });
+            document.getElementById('btn-audit-load-more').addEventListener('click', () => {
+                loadAuditLogs(true);
+            });
         }
 
         // Lógica do contador persistente
@@ -565,6 +572,9 @@
         let signaturesListener = null;
         let relinkConfirmCallback = null; // Callback para o modal de re-vinculação
         let termoPdfListener = null;
+        // Variáveis para paginação da auditoria
+        let auditLastDoc = null;
+        const AUDIT_PAGE_SIZE = 5;
 
         function showAdminView(viewId) {
             // Desanexa todos os listeners para garantir que os dados sejam carregados apenas para a visualização ativa
@@ -830,7 +840,7 @@
         // GERENCIADOR DE CAPTAÇÕES COM PAGINAÇÃO E FILTRO
         // ========================================================================
         let capturesQueryState = {};
-        const CAPTURES_PER_PAGE = 10;
+        const CAPTURES_PER_PAGE = 5;
 
         function initCapturesManager() {
             // Limpa o estado anterior e os listeners
@@ -874,20 +884,26 @@
             paginationEl.classList.add('hidden');
 
             if (direction === 'next') {
+                if (!capturesQueryState.lastDoc) return; // No more pages
                 capturesQueryState.page++;
                 capturesQueryState.history.push(capturesQueryState.lastDoc);
             } else if (direction === 'prev') {
                 if (capturesQueryState.page > 1) {
                     capturesQueryState.page--;
                     capturesQueryState.history.pop();
+                } else {
+                    return; // Already on the first page
                 }
             }
 
             let query = db.collection('captacoes');
 
-            // Lógica de busca
-            // IMPORTANTE: Para que a busca e ordenação funcionem, você precisa criar Índices no Firestore.
-            // O console do Firebase geralmente sugere o link para criar o índice automaticamente quando uma query falha por falta dele.
+            let effectiveSortField = capturesQueryState.sortBy.split('_')[0];
+            let effectiveSortDirection = capturesQueryState.sortBy.split('_')[1];
+
+            // Priorize o campo de busca para orderBy se uma busca por intervalo for realizada.
+            // Se for uma busca exata ou sem termo, use a ordenação selecionada.
+            // IMPORTANTE: Para que a busca e ordenação funcionem, você pode precisar criar Índices no Firestore.
             if (capturesQueryState.searchTerm) {
                 const field = capturesQueryState.searchField;
                 const term = capturesQueryState.searchTerm;
@@ -895,17 +911,20 @@
                 // Para CPF, busca exata sem pontuação
                 if (field === 'propCpf') {
                     query = query.where(field, '==', term.replace(/\D/g, ''));
+                    // Aplica a ordenação selecionada após a busca exata
+                    query = query.orderBy(effectiveSortField, effectiveSortDirection);
+                } else if (field === 'id') { // Busca "começa com" para ID
+                    // Para buscar pelo ID do documento, é preciso usar FieldPath.documentId()
+                    query = query.orderBy(firebase.firestore.FieldPath.documentId(), 'asc').startAt(term).endAt(term + '\uf8ff');
                 } else {
                     // Para outros campos, faz uma busca "começa com" (case-sensitive)
-                    query = query.orderBy(field).startAt(term).endAt(term + '\uf8ff');
+                    query = query.orderBy(field, 'asc'); // Deve ordenar pelo campo de busca para usar startAt/endAt
+                    query = query.startAt(term).endAt(term + '\uf8ff');
                 }
             }
-
-            // Lógica de ordenação
-            const [sortField, sortDirection] = capturesQueryState.sortBy.split('_');
-            // Adiciona a ordenação principal, a menos que já tenha sido adicionada pela busca
-            if (!capturesQueryState.searchTerm || capturesQueryState.searchField !== sortField) {
-                query = query.orderBy(sortField, sortDirection);
+            else {
+                // Sem termo de busca, apenas aplica a ordenação selecionada
+                query = query.orderBy(effectiveSortField, effectiveSortDirection);
             }
 
             // Lógica de paginação
@@ -1028,6 +1047,11 @@
             'USER_DEACTIVATED': { title: 'Usuário Desativado', color: 'red' },
             'PDF_TERM_UPDATED': { title: 'Termo do PDF Atualizado', color: 'blue' },
             'BACKUP_RESTORED': { title: 'Backup Restaurado', color: 'red' },
+            'SIGNATURE_LINK_GENERATED': { title: 'Link de Assinatura Gerado', color: 'blue' },
+            'SIGNATURE_REVOKED': { title: 'Assinatura Revogada', color: 'yellow' },
+            'SIGNATURE_DELETED_BY_ADMIN': { title: 'Assinatura Excluída (Admin)', color: 'red' },
+            'SIGNATURE_RELINKED_BY_ADMIN': { title: 'Assinatura Re-vinculada (Admin)', color: 'blue' },
+            'SIGNATURE_ORPHANED_BY_RELINK': { title: 'Assinatura Desvinculada (Órfã)', color: 'yellow' },
         };
 
         const colorClasses = {
@@ -1039,28 +1063,54 @@
         };
 
 
-        async function loadAuditLogs() {
+        async function loadAuditLogs(loadMore = false) {
             const listEl = document.getElementById('audit-log-list');
+            const loadMoreContainer = document.getElementById('audit-load-more-container');
+            const loadMoreBtn = document.getElementById('btn-audit-load-more');
 
-            auditListener = db.collection('audit_logs').orderBy('timestamp', 'desc').limit(100).onSnapshot(snapshot => {
-                reads++;
+            if (!loadMore) {
+                listEl.innerHTML = '<p class="text-gray-500 animate-pulse">Carregando logs...</p>';
+                auditLastDoc = null;
+            }
+
+            loadMoreBtn.disabled = true;
+            loadMoreBtn.innerText = 'Carregando...';
+
+            let query = db.collection('audit_logs').orderBy('timestamp', 'desc');
+
+            if (loadMore && auditLastDoc) {
+                query = query.startAfter(auditLastDoc);
+            }
+
+            query = query.limit(AUDIT_PAGE_SIZE);
+
+            try {
+                const snapshot = await query.get();
+                reads += snapshot.size || 1;
                 updateCounters();
+
+                if (!loadMore) {
+                    listEl.innerHTML = ''; // Clear loading message
+                }
+
                 if (snapshot.empty) {
-                    listEl.innerHTML = '<p class="text-gray-500">Nenhum log de auditoria encontrado.</p>';
+                    if (!loadMore) {
+                        listEl.innerHTML = '<p class="text-gray-500">Nenhum log de auditoria encontrado.</p>';
+                    }
+                    loadMoreContainer.classList.add('hidden');
                     return;
                 }
-                listEl.innerHTML = '';
-                let html = '';
+
                 snapshot.forEach(doc => {
                     const log = doc.data();
                     const actionInfo = auditActionMap[log.action] || { title: log.action, color: 'gray' };
                     const badgeColor = colorClasses[actionInfo.color];
-                    const date = new Date(log.timestamp.seconds * 1000).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                    const date = new Date(log.timestamp.seconds * 1000).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
                     let detailsHtml = '';
                     if (log.details && Object.keys(log.details).length > 0) {
                         detailsHtml = `<div class="text-gray-500 mt-1 pl-4 border-l-2 border-gray-200 text-xs">${Object.entries(log.details).map(([key, value]) => `<strong>${key}:</strong> ${String(value).substring(0, 100)}`).join('<br>')}</div>`;
                     }
-                    html += `
+                    const html = `
                         <div class="p-3 border-b text-sm">
                             <p>
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badgeColor}">${actionInfo.title}</span>
@@ -1069,13 +1119,24 @@
                             ${detailsHtml}
                         </div>
                     `;
+                    listEl.insertAdjacentHTML('beforeend', html);
                 });
-                listEl.innerHTML = html;
-            }, error => {
+
+                auditLastDoc = snapshot.docs[snapshot.docs.length - 1];
+
+                if (snapshot.docs.length < AUDIT_PAGE_SIZE) {
+                    loadMoreContainer.classList.add('hidden');
+                } else {
+                    loadMoreContainer.classList.remove('hidden');
+                }
+
+            } catch (error) {
                 console.error("Erro ao carregar auditoria:", error);
-                showAlert('Falha ao carregar logs.', 'Erro');
-                auditListener = null;
-            });
+                listEl.innerHTML = '<p class="text-red-500">Falha ao carregar logs.</p>';
+            } finally {
+                loadMoreBtn.disabled = false;
+                loadMoreBtn.innerText = 'Carregar Mais';
+            }
         }
 
         async function loadUserAccess() {
