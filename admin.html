@@ -678,17 +678,23 @@
                 let html = '';
                 snapshot.forEach(doc => {
                     const sig = doc.data();
-                    const date = new Date(sig.signedAt.seconds * 1000).toLocaleString('pt-BR');
+                    const date = sig.signedAt ? new Date(sig.signedAt.seconds * 1000).toLocaleString('pt-BR') : 'Data inválida';
                     html += `
-                        <div class="p-4 border rounded-lg bg-gray-50 flex flex-wrap gap-4 items-center">
-                            <div class="p-2 bg-white border rounded">
-                                <img src="${sig.signatureImage}" alt="Assinatura" class="h-16 w-48 object-contain">
+                        <div class="p-4 border rounded-lg bg-gray-50 flex flex-wrap gap-4 items-center justify-between">
+                            <div class="flex flex-wrap gap-4 items-center">
+                                <div class="p-2 bg-white border rounded">
+                                    <img src="${sig.signatureImage}" alt="Assinatura" class="h-16 w-48 object-contain">
+                                </div>
+                                <div class="text-sm">
+                                    <p><strong>Proprietário:</strong> ${sig.ownerName}</p>
+                                    <p><strong>CPF:</strong> ${sig.ownerCpf}</p>
+                                    <p><strong>Data:</strong> ${date}</p>
+                                    <p class="text-xs text-gray-500 mt-1">ID da Assinatura: ${doc.id} | ID da Captação: ${sig.captureId}</p>
+                                </div>
                             </div>
-                            <div class="text-sm flex-grow">
-                                <p><strong>Proprietário:</strong> ${sig.ownerName}</p>
-                                <p><strong>CPF:</strong> ${sig.ownerCpf}</p>
-                                <p><strong>Data:</strong> ${date}</p>
-                                <p class="text-xs text-gray-500 mt-1">ID da Assinatura: ${doc.id} | ID da Captação: ${sig.captureId}</p>
+                            <div class="flex flex-col gap-2 shrink-0">
+                                <button onclick="relinkSignature('${doc.id}', '${sig.captureId}')" class="px-3 py-1.5 bg-blue-500 text-white text-xs font-semibold rounded-md hover:bg-blue-600">Re-vincular</button>
+                                <button onclick="deleteSignature('${doc.id}', '${sig.captureId}')" class="px-3 py-1.5 bg-red-500 text-white text-xs font-semibold rounded-md hover:bg-red-600">Excluir</button>
                             </div>
                         </div>
                     `;
@@ -697,6 +703,82 @@
             }, error => {
                 console.error("Erro ao carregar assinaturas:", error);
                 listEl.innerHTML = '<p class="text-red-500">Falha ao carregar assinaturas.</p>';
+            });
+        }
+
+        async function deleteSignature(signatureId, captureId) {
+            showConfirm(`Tem certeza que deseja EXCLUIR permanentemente esta assinatura? A captação com ID ${captureId.substring(0,6)}... será desvinculada.`, 'Confirmar Exclusão', async () => {
+                const batch = db.batch();
+                const sigRef = db.collection('assinaturas').doc(signatureId);
+                batch.delete(sigRef);
+
+                if (captureId && captureId !== 'undefined') {
+                    const captureRef = db.collection('captacoes').doc(captureId);
+                    batch.update(captureRef, {
+                        signatureId: firebase.firestore.FieldValue.delete(),
+                        signatureStatus: 'revoked_by_admin'
+                    });
+                }
+
+                try {
+                    await batch.commit();
+                    writes += 2; // Approximation
+                    updateCounters();
+                    logActivity('SIGNATURE_DELETED_BY_ADMIN', { signatureId, captureId });
+                    showAlert('Assinatura excluída com sucesso.', 'Sucesso');
+                    // The listener will auto-refresh the list
+                } catch (error) {
+                    console.error("Erro ao excluir assinatura: ", error);
+                    showAlert('Falha ao excluir a assinatura.', 'Erro');
+                }
+            });
+        }
+
+        async function relinkSignature(signatureId, oldCaptureId) {
+            const newCaptureId = prompt(`Digite o NOVO ID da captação para vincular esta assinatura (ID atual: ${oldCaptureId}):`);
+            if (!newCaptureId || newCaptureId.trim() === '') {
+                return; // User cancelled
+            }
+
+            const newCaptureIdTrimmed = newCaptureId.trim();
+
+            showConfirm(`Confirma a re-vinculação da assinatura ${signatureId.substring(0,6)}... da captação ${oldCaptureId.substring(0,6)}... para a captação ${newCaptureIdTrimmed}?`, 'Confirmar Re-vinculação', async () => {
+                const batch = db.batch();
+
+                // 1. Get new capture to ensure it exists
+                const newCaptureRef = db.collection('captacoes').doc(newCaptureIdTrimmed);
+                const newCaptureDoc = await newCaptureRef.get();
+                if (!newCaptureDoc.exists) {
+                    showAlert('Erro: O novo ID de captação informado não foi encontrado.', 'Erro');
+                    return;
+                }
+
+                // 2. Unlink from old capture
+                if (oldCaptureId && oldCaptureId !== 'undefined') {
+                    const oldCaptureRef = db.collection('captacoes').doc(oldCaptureId);
+                    batch.update(oldCaptureRef, {
+                        signatureId: firebase.firestore.FieldValue.delete(),
+                        signatureStatus: 'revoked_by_admin'
+                    });
+                }
+
+                // 3. Link to new capture
+                batch.update(newCaptureRef, { signatureId: signatureId, signatureStatus: 'signed' });
+
+                // 4. Update signature document
+                const sigRef = db.collection('assinaturas').doc(signatureId);
+                batch.update(sigRef, { captureId: newCaptureIdTrimmed });
+
+                try {
+                    await batch.commit();
+                    writes += 3; // Approximation
+                    updateCounters();
+                    logActivity('SIGNATURE_RELINKED_BY_ADMIN', { signatureId, oldCaptureId, newCaptureId: newCaptureIdTrimmed });
+                    showAlert('Assinatura re-vinculada com sucesso.', 'Sucesso');
+                } catch (error) {
+                    console.error("Erro ao re-vincular assinatura: ", error);
+                    showAlert('Falha ao re-vincular a assinatura.', 'Erro');
+                }
             });
         }
 

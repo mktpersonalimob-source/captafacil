@@ -835,9 +835,13 @@
             <!-- O texto do termo será carregado aqui pelo JavaScript -->
         </div>
 
-        <div class="signature-box" style="justify-content: center; margin-top: 100px;">
-            <div class="signature-line" style="width: 60%;">
+        <div class="signature-box" style="justify-content: center; margin-top: 80px;">
+            <div class="signature-line" style="width: 70%; position: relative; padding-bottom: 30px;">
+                <img id="pdf-signature-image" src="" style="position: absolute; bottom: 35px; left: 50%; transform: translateX(-50%); max-height: 60px; max-width: 90%; object-fit: contain;">
                 Assinatura do Proprietário
+                <div id="pdf-signature-details" style="font-size: 7px; color: #333; margin-top: 2px; line-height: 1.2; font-weight: normal;">
+                    <!-- Details will be injected here -->
+                </div>
             </div>
         </div>
         
@@ -975,16 +979,16 @@
             if (sigImg) sigImg.src = '';
             if (sigDetails) sigDetails.innerHTML = '';
 
-            if (signatureData) {
+            if (signatureData && signatureData.signatureImage) {
                 if (sigImg) sigImg.src = signatureData.signatureImage;
                 if (sigDetails) {
                     const signedDate = new Date(signatureData.signedAt.seconds * 1000).toLocaleString('pt-BR');
-                    sigDetails.innerHTML = `Assinado digitalmente por: ${signatureData.ownerName}<br>CPF: ${signatureData.ownerCpf}<br>Data: ${signedDate}`;
+                    sigDetails.innerHTML = `Assinado digitalmente por: ${signatureData.ownerName}<br>CPF: ${signatureData.ownerCpf}<br>Data: ${signedDate}<br>IP: ${signatureData.ipAddress || 'Não registrado'}`;
                 }
             }
 
             setText('.out-data', formatDate(data.createdAt || data.dataCadastro));
-            setText('.out-corretor-nome', data.corretorNome, true);
+            setText('.out-corretor-nome', data.corretorNome || data.owner_email, true);
             setText('.out-codigo-imovel', data.codigoImovel, true);
 
             const fotoBox = document.querySelector('#print-container .out-tem-foto');
@@ -1646,6 +1650,57 @@
             });
         }
 
+        async function showSignatureStatus(captureId, signatureId) {
+            const modal = document.getElementById('signature-status-modal');
+            const content = document.getElementById('signature-status-content');
+            modal.classList.remove('hidden');
+            content.innerHTML = '<p class="animate-pulse">Carregando dados da assinatura...</p>';
+
+            if (signatureId && signatureId !== 'undefined' && signatureId !== 'null') {
+                // Fetch signature details
+                try {
+                    const sigDoc = await db.collection('assinaturas').doc(signatureId).get();
+                    reads++;
+                    updateCounters();
+                    if (sigDoc.exists) {
+                        const sigData = sigDoc.data();
+                        const signedDate = new Date(sigData.signedAt.seconds * 1000).toLocaleString('pt-BR');
+                        content.innerHTML = `
+                            <p><strong>Status:</strong> <span class="font-semibold text-green-600">Assinado Digitalmente</span></p>
+                            <p><strong>Proprietário:</strong> ${sigData.ownerName}</p>
+                            <p><strong>CPF:</strong> ${sigData.ownerCpf}</p>
+                            <p><strong>Data da Assinatura:</strong> ${signedDate}</p>
+                            <p><strong>Endereço IP:</strong> ${sigData.ipAddress || 'Não registrado'}</p>
+                        `;
+                    } else {
+                        content.innerHTML = '<p class="text-red-500">Erro: Documento de assinatura não encontrado, mas a captação está marcada como assinada. Por favor, contate o suporte.</p>';
+                    }
+                } catch(e) {
+                    content.innerHTML = '<p class="text-red-500">Falha ao carregar dados da assinatura.</p>';
+                }
+            } else {
+                // Check if pending
+                try {
+                    const capDoc = await db.collection('captacoes').doc(captureId).get();
+                    reads++;
+                    updateCounters();
+                    if (capDoc.exists && capDoc.data().signatureStatus === 'pending') {
+                        const expiresDate = new Date(capDoc.data().signatureTokenExpires.seconds * 1000).toLocaleString('pt-BR');
+                        content.innerHTML = `
+                            <p><strong>Status:</strong> <span class="font-semibold text-yellow-600">Aguardando Assinatura</span></p>
+                            <p>Um link para assinatura foi gerado e está aguardando a ação do proprietário.</p>
+                            <p><strong>Link expira em:</strong> ${expiresDate}</p>
+                        `;
+                    } else {
+                        content.innerHTML = '<p><strong>Status:</strong> <span class="font-semibold text-gray-600">Não Assinado</span></p><p>Nenhum link de assinatura foi gerado para esta captação ainda.</p>';
+                    }
+                } catch(e) {
+                    console.error("Error checking capture status:", e);
+                    content.innerHTML = '<p class="text-red-500">Falha ao verificar o status da captação.</p>';
+                }
+            }
+        }
+
         function editCapture(id) {
             logActivity('CAPTURE_EDIT_ATTEMPT', { captureId: id });
             window.location.href = `form.html?edit=${id}`;
@@ -1901,105 +1956,6 @@
             `;
         }
 
-        // Listener de Autenticação
-        auth.onAuthStateChanged(async user => {
-            if (user) {
-                currentUser = user;
-                // Primeiro, verifica o perfil do usuário. A função fetchUserDetails agora controla o fluxo
-                await fetchUserDetails(user);
-            } else {
-                // Usuário não está logado
-                if (isInactiveLogout) {
-                    isInactiveLogout = false; // Reset flag
-                    showAlert('Você foi desconectado por inatividade.', 'Sessão Expirada', () => {
-                        window.location.href = 'index.html';
-                    });
-                } else {
-                    window.location.href = 'index.html';
-                }
-            }
-        });
-
-        // A lógica principal da aplicação só roda DEPOIS que fetchUserDetails confirmar que o setup está completo.
-        function initializeApp(user, userName, userData) { // Accept userName and userData
-            document.getElementById('global-loading-spinner').classList.add('hidden'); // Hide loading spinner
-            currentUser = user; // Set currentUser here
-            if (user.email === adminEmail) {
-                document.getElementById('admin-button').classList.remove('hidden');
-                const counterWrapper = document.getElementById('firebase-counter-wrapper');
-                if (counterWrapper) {
-                    // counterWrapper.classList.remove('hidden'); // Already handled in admin.html
-                    counterWrapper.classList.remove('hidden');
-                    counterWrapper.classList.add('flex');
-                }
-            }
-            updateCounters(); // Exibe o contador persistido ao iniciar
-            // Inicia o relógio
-
-            // Inicia o relógio e as saudações
-            updateDateTime();
-            setInterval(updateDateTime, 1000); // Atualiza a cada segundo
-            fetchGlobalConfig();
-            setGreetingMessage(userName, userData); // Pass userName and userData
-            loadRecentCaptures();
-            loadAdminNotices();
-
-            showView('dashboard-view'); //
-            resetInactivityTimer(); //
-
-            // Search and Filter Listeners
-            document.getElementById('btn-apply-search').addEventListener('click', () => loadHistoryPage()); // Call loadHistoryPage for new search
-            document.getElementById('btn-clear-search').addEventListener('click', () => { // Clear search and reload first page
-                document.getElementById('search-input').value = '';
-                document.getElementById('sort-by').value = 'createdAt_desc';
-                document.getElementById('filter-date').value = '';
-                document.getElementById('btn-clear-date-filter').classList.add('hidden');
-                clearAdvancedFilters(); // Clear advanced filters as well
-                loadHistoryPage();
-            });
-            document.getElementById('search-input').addEventListener('keyup', (event) => { // Trigger search on Enter
-                if (event.key === 'Enter') loadHistoryPage();
-            });
-            document.getElementById('filter-date').addEventListener('change', () => { // Trigger search on date change
-                if (document.getElementById('filter-date').value) document.getElementById('btn-clear-date-filter').classList.remove('hidden');
-                else document.getElementById('btn-clear-date-filter').classList.add('hidden');
-                loadHistoryPage();
-            });
-            document.getElementById('btn-clear-date-filter').addEventListener('click', () => { // Clear date filter
-                document.getElementById('filter-date').value = '';
-                document.getElementById('btn-clear-date-filter').classList.add('hidden');
-                loadHistoryPage();
-            });
-            document.getElementById('sort-by').addEventListener('change', () => loadHistoryPage()); // New sort listener
-            document.getElementById('btn-open-advanced-filters').addEventListener('click', openAdvancedFilterModal);
-            
-            // Initial call to hide spinner
-            hideGlobalSpinner(); //
-
-            // ... (rest of the function)
-            
-            ['click', 'keypress', 'mousemove', 'scroll'].forEach(event => {
-                window.addEventListener(event, resetInactivityTimer);
-            });
-
-            // Adiciona listeners para o modal de confirmação
-            document.getElementById('confirm-btn-yes').addEventListener('click', () => closeConfirm(true));
-            document.getElementById('confirm-btn-no').addEventListener('click', () => closeConfirm(false));
-            document.getElementById('about-modal-btn').addEventListener('click', openAboutModal); //
-
-            // Novo listener para o botão de toggle dos filtros
-            document.getElementById('btn-toggle-filters').addEventListener('click', () => { // This is for mobile view
-                const filtersContainer = document.getElementById('filters-container');
-                const buttonText = document.getElementById('btn-toggle-filters-text');
-                filtersContainer.classList.toggle('hidden');
-                if (filtersContainer.classList.contains('hidden')) { // Toggle text
-                    buttonText.innerText = 'Mostrar Filtros';
-                } else {
-                    buttonText.innerText = 'Ocultar Filtros';
-                }
-            });
-        }
-
         function createHistoryItemHtml(data) {
             const date = data.createdAt ? new Date(data.createdAt.seconds * 1000).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'Data Indisponível';
             const tipoCaptacao = (data.tipoCaptacao === 'Ambos' || data.tipoCaptacao === 'Venda e Aluguel') ? 'Venda e Aluguel' : data.tipoCaptacao || 'N/D';
@@ -2015,10 +1971,13 @@
             }
 
             return `
-                <div id="history-item-${data.id}" class="bg-white p-4 rounded-xl shadow-sm border space-y-4">
+                <div id="history-item-${data.id}" class="relative bg-white p-4 rounded-xl shadow-sm border space-y-4">
+                    <div class="absolute top-4 right-4 z-10">
+                        <button type="button" onclick="showSignatureStatus('${data.id}', '${data.signatureId}')" class="focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 rounded-full" title="Ver status da assinatura">${signatureBadge}</button>
+                    </div>
                     <!-- Header: Tipo, Tipologia e Endereço -->
                     <div>
-                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2">
+                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2 pr-24">
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-800">
                                 ${tipoCaptacao}
                             </span>
@@ -2047,9 +2006,6 @@
                                 <span class="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-xs">${data.id.substring(0, 6).toUpperCase()}</span>
                                 ${codigoImovelBadge}
                             </div>
-                            <div class="flex items-center gap-2">
-                                <button type="button" onclick="showSignatureStatus('${data.id}', '${data.signatureId}')" class="focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 rounded-full" title="Ver status da assinatura">${signatureBadge}</button>
-                            </div>
                         </div>
                     </div>
         
@@ -2063,15 +2019,90 @@
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>
                             <span>Gerar PDF</span>
                         </button>
-                        ${!isSigned ? `
-                        <button onclick="generateSignatureLink('${data.id}')" class="w-full sm:w-auto flex-1 px-4 py-2 bg-purple-600 text-white text-sm font-semibold rounded-lg hover:bg-purple-700 flex items-center justify-center gap-2">
+                        <button onclick="handleSignatureRequest('${data.id}', ${!!isSigned})" class="w-full sm:w-auto flex-1 px-4 py-2 bg-purple-600 text-white text-sm font-semibold rounded-lg hover:bg-purple-700 flex items-center justify-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L14.732 3.732z" /></svg>
-                            <span>Coletar Assinatura</span>
+                            <span>${isSigned ? 'Solicitar Nova Assinatura' : 'Coletar Assinatura'}</span>
                         </button>
-                        ` : ''}
                     </div>
                 </div>
             `;
+        }
+
+        // Listener de Autenticação
+        auth.onAuthStateChanged(async user => {
+            if (user) {
+                currentUser = user;
+                // Primeiro, verifica o perfil do usuário. A função fetchUserDetails agora controla o fluxo
+                await fetchUserDetails(user);
+            } else {
+                // Usuário não está logado
+                if (isInactiveLogout) {
+                    isInactiveLogout = false; // Reset flag
+                    showAlert('Você foi desconectado por inatividade.', 'Sessão Expirada', () => {
+                        window.location.href = 'index.html';
+                    });
+                } else {
+                    window.location.href = 'index.html';
+                }
+            }
+        });
+
+        // A lógica principal da aplicação só roda DEPOIS que fetchUserDetails confirmar que o setup está completo.
+        function initializeApp(user, userName, userData) { // Accept userName and userData
+            document.getElementById('global-loading-spinner').classList.add('hidden'); // Hide loading spinner
+            currentUser = user; // Set currentUser here
+            if (user.email === adminEmail) {
+                document.getElementById('admin-button').classList.remove('hidden');
+                const counterWrapper = document.getElementById('firebase-counter-wrapper');
+                if (counterWrapper) {
+                    counterWrapper.classList.remove('hidden');
+                    counterWrapper.classList.add('flex');
+                }
+            }
+            updateCounters();
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+            fetchGlobalConfig();
+            setGreetingMessage(userName, userData);
+            loadRecentCaptures();
+            loadAdminNotices();
+            showView('dashboard-view');
+            resetInactivityTimer();
+            document.getElementById('btn-apply-search').addEventListener('click', applyFiltersAndSearch);
+            document.getElementById('btn-clear-search').addEventListener('click', () => {
+                document.getElementById('search-input').value = '';
+                document.getElementById('sort-by').value = 'createdAt_desc';
+                document.getElementById('filter-date').value = '';
+                document.getElementById('btn-clear-date-filter').classList.add('hidden');
+                clearAdvancedFilters();
+            });
+            document.getElementById('search-input').addEventListener('keyup', (event) => { if (event.key === 'Enter') applyFiltersAndSearch(); });
+            document.getElementById('filter-date').addEventListener('change', () => {
+                document.getElementById('btn-clear-date-filter').classList.toggle('hidden', !document.getElementById('filter-date').value);
+                applyFiltersAndSearch();
+            });
+            document.getElementById('btn-clear-date-filter').addEventListener('click', () => {
+                document.getElementById('filter-date').value = '';
+                document.getElementById('btn-clear-date-filter').classList.add('hidden');
+                applyFiltersAndSearch();
+            });
+            document.getElementById('sort-by').addEventListener('change', applyFiltersAndSearch);
+            document.getElementById('btn-open-advanced-filters').addEventListener('click', openAdvancedFilterModal);
+            document.getElementById('btn-refresh-db').addEventListener('click', () => {
+                historyCache = [];
+                fetchAllHistory();
+            });
+            hideGlobalSpinner();
+            ['click', 'keypress', 'mousemove', 'scroll'].forEach(event => window.addEventListener(event, resetInactivityTimer));
+            document.getElementById('confirm-btn-yes').addEventListener('click', () => closeConfirm(true));
+            document.getElementById('confirm-btn-no').addEventListener('click', () => closeConfirm(false));
+            document.getElementById('about-modal-btn').addEventListener('click', openAboutModal);
+            document.getElementById('btn-toggle-filters').addEventListener('click', () => {
+                const filtersContainer = document.getElementById('filters-container');
+                const buttonText = document.getElementById('btn-toggle-filters-text');
+                filtersContainer.classList.toggle('hidden');
+                buttonText.innerText = filtersContainer.classList.contains('hidden') ? 'Mostrar Filtros' : 'Ocultar Filtros';
+            });
         }
 
         function showGlobalSpinner() { //

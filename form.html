@@ -1267,7 +1267,7 @@
                 if (sigImg) sigImg.src = signatureData.signatureImage;
                 if (sigDetails) {
                     const signedDate = new Date(signatureData.signedAt.seconds * 1000).toLocaleString('pt-BR');
-                    sigDetails.innerHTML = `Assinado digitalmente por: ${signatureData.ownerName}<br>CPF: ${signatureData.ownerCpf}<br>Data: ${signedDate}`;
+                    sigDetails.innerHTML = `Assinado digitalmente por: ${signatureData.ownerName}<br>CPF: ${signatureData.ownerCpf}<br>Data: ${signedDate}<br>IP: ${signatureData.ipAddress || 'Não registrado'}`;
                 }
             }
 
