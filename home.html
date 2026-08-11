@@ -991,7 +991,12 @@
                 if (sigImg) sigImg.src = signatureData.signatureImage;
                 if (sigDetails) {
                     const signedDate = new Date(signatureData.signedAt.seconds * 1000).toLocaleString('pt-BR');
-                    sigDetails.innerHTML = `Assinado digitalmente por: ${signatureData.ownerName}<br>CPF: ${signatureData.ownerCpf}<br>Data: ${signedDate}<br>IP: ${signatureData.clientIp || 'Não registrado'}`;
+                    let detailsHtml = `Assinado digitalmente por: ${signatureData.ownerName}<br>`;
+                    if (signatureData.ownerCpf) {
+                        detailsHtml += `CPF: ${signatureData.ownerCpf}<br>`;
+                    }
+                    detailsHtml += `Data: ${signedDate}<br>IP: ${signatureData.clientIp || 'Não registrado'}`;
+                    sigDetails.innerHTML = detailsHtml;
                 }
             }
 
@@ -1109,15 +1114,20 @@
                 expires.setDate(expires.getDate() + 2); // Token expires in 48 hours
                 const expiresTimestamp = firebase.firestore.Timestamp.fromDate(expires);
 
-                // 1. Cria o documento público para o link de assinatura PRIMEIRO
-                const linkRef = db.collection('signature_links').doc(token);
-                await linkRef.set({
+                const linkData = {
                     captureId: captureId,
                     expiresAt: expiresTimestamp,
                     propertyAddress: `${captureData.imovelEndereco || ''}, ${captureData.imovelNumero || 'S/N'} - ${captureData.imovelBairro || ''}`,
                     ownerName: captureData.propNome || '',
-                    ownerCpf: captureData.propCpf || ''
-                });
+                };
+
+                if (captureData.propCpf) {
+                    linkData.ownerCpf = captureData.propCpf;
+                }
+
+                // 1. Cria o documento público para o link de assinatura PRIMEIRO
+                const linkRef = db.collection('signature_links').doc(token);
+                await linkRef.set(linkData);
 
                 // 2. DEPOIS, atualiza a captação original com o status e token
                 const captureRef = db.collection('captacoes').doc(captureId);
@@ -1223,7 +1233,7 @@
 
                 content.innerHTML = `
                     <p><strong>Proprietário:</strong> ${sigData.ownerName}</p>
-                    <p><strong>CPF:</strong> ${sigData.ownerCpf}</p>
+                    ${sigData.ownerCpf ? `<p><strong>CPF:</strong> ${sigData.ownerCpf}</p>` : ''}
                     <p><strong>Data da Assinatura:</strong> ${signedDate}</p>
                     <p><strong>Endereço IP:</strong> ${sigData.clientIp || 'Não registrado'}</p>
                     <div class="mt-4 pt-4 border-t">
