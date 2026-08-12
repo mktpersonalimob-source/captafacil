@@ -172,6 +172,28 @@
             return !ctx.getImageData(0, 0, signaturePad.width, signaturePad.height).data.some(channel => channel !== 0);
         }
 
+        async function getPublicIp() {
+            // Tenta o Cloudflare primeiro, que é rápido e confiável.
+            try {
+                const response = await fetch('https://www.cloudflare.com/cdn-cgi/trace');
+                const text = await response.text();
+                const ipLine = text.split('\n').find(line => line.startsWith('ip='));
+                if (ipLine) return ipLine.substring(3);
+            } catch (e) {
+                console.warn("Falha ao buscar IP via Cloudflare, tentando alternativa.", e);
+            }
+
+            // Se o primeiro falhar, tenta o ipinfo.io.
+            try {
+                const response = await fetch('https://ipinfo.io/ip');
+                if (response.ok) return await response.text();
+            } catch (e) {
+                console.warn("Falha ao buscar IP via ipinfo.io.", e);
+            }
+
+            return 'N/A'; // Retorna N/A se ambos falharem.
+        }
+
         async function submitSignature() {
             const token = new URLSearchParams(window.location.search).get('token');
             const ownerName = document.getElementById('owner-name').value.trim();
@@ -191,14 +213,12 @@
             btn.disabled = true;
             btn.innerText = 'Enviando...';
 
-            let clientIp = 'N/A';
-            try {
-                const response = await fetch('https://api.ipify.org?format=json');
-                const data = await response.json();
-                clientIp = data.ip;
-            } catch (e) {
-                console.warn("Não foi possível obter o endereço IP do cliente.", e);
-            }
+            const clientIp = await getPublicIp();
+
+            // Coleta apenas o User-Agent, conforme solicitado.
+            const deviceInfo = {
+                userAgent: navigator.userAgent
+            };
 
             const signatureImage = signaturePad.toDataURL('image/png');
 
@@ -214,6 +234,7 @@
                     signatureImage: signatureImage,
                     signedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     clientIp: clientIp, // Adiciona o IP do cliente
+                    deviceInfo: deviceInfo, // Adiciona as informações do dispositivo
                     _token: token // Adicionado para validação da regra de segurança
                 });
 
