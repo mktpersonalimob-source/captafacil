@@ -115,7 +115,7 @@
 </head>
 <body class="text-gray-800 mb-20">
 
-    <div id="custom-alert" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 transition-opacity">
+    <div id="custom-alert" class="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4 transition-opacity">
         <div class="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 text-center transform transition-transform scale-100">
             <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
                 <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -296,7 +296,7 @@
                     Uma ferramenta moderna para otimizar e digitalizar o processo de captação de imóveis.
                 </p>
                 <p class="text-sm text-gray-600">
-                    Versão <span class="font-mono font-semibold bg-gray-100 text-gray-700 px-2 py-1 rounded-md">1.5 beta</span>
+                    Versão <span class="font-mono font-semibold bg-gray-100 text-gray-700 px-2 py-1 rounded-md">2.0 beta</span>
                 </p>
             </div>
 
@@ -305,6 +305,48 @@
                 <p class="text-xs text-gray-500">
                     Criado por <span class="font-semibold text-gray-700">Guilherme Montoani</span>
                 </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================================== -->
+    <!-- MODAL DE LINK DE ASSINATURA -->
+    <!-- ======================================================================== -->
+    <div id="signature-link-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-lg w-full p-6 transform transition-transform scale-100">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Link de Assinatura Gerado</h3>
+                <button onclick="document.getElementById('signature-link-modal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            <p class="text-sm text-gray-600 mb-4">Envie o link abaixo para o proprietário. O link é único e expira em 48 horas.</p>
+            <div class="bg-gray-100 p-3 rounded-lg border">
+                <p id="signature-link-url" class="text-sm text-blue-600 break-all"></p>
+            </div>
+            <div class="mt-5 flex justify-end gap-3">
+                <button onclick="copySignatureLink()" class="px-4 py-2 bg-orange-600 text-white font-medium rounded-lg shadow hover:bg-orange-700">Copiar Link</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================================== -->
+    <!-- MODAL DE STATUS DA ASSINATURA -->
+    <!-- ======================================================================== -->
+    <div id="signature-status-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Status da Assinatura</h3>
+                <button onclick="document.getElementById('signature-status-modal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            <div id="signature-status-content" class="text-sm text-gray-700 space-y-2">
+                <!-- O conteúdo será injetado aqui pelo JavaScript -->
+                <p class="animate-pulse">Carregando dados da assinatura...</p>
+            </div>
+            <div class="mt-5 text-right">
+                <button onclick="document.getElementById('signature-status-modal').classList.add('hidden')" class="px-4 py-2 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300">Fechar</button>
             </div>
         </div>
     </div>
@@ -345,10 +387,10 @@
             </button>
             <button onclick="showView('history-view')" class="group text-left p-6 bg-white border border-gray-200 rounded-xl shadow-lg hover:shadow-xl hover:border-orange-300 transition-all transform hover:scale-105">
                 <div class="flex items-center gap-4 mb-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    <h2 class="text-2xl font-bold text-gray-800">Histórico</h2>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                    <h2 class="text-2xl font-bold text-gray-800">Minhas Captações</h2>
                 </div>
-                <p class="text-gray-600 ml-14">Visualizar, filtrar e gerar novamente as fichas salvas.</p>
+                <p class="text-gray-600 ml-14">Visualize, edite e gerencie todas as suas captações.</p>
             </button>
         </div>
         
@@ -358,10 +400,31 @@
                 <!-- Coluna da Esquerda: Captações e Recados -->
                 <div class="lg:col-span-2 space-y-6">
                     <div class="hidden sm:block">
-                        <h3 class="text-xl font-bold text-gray-800 mb-4">Captações recentes</h3>
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">Captações Recentes</h3>
                         <div id="recent-captures-display" class="space-y-4">
                             <p class="text-gray-500 animate-pulse">Carregando captações recentes...</p>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Coluna da Direita: Links -->
+                <!-- Links Úteis & Feedback -->
+                <div class="space-y-4">
+                    <div class="p-6 bg-white border border-gray-200 rounded-xl shadow-sm">
+                         <h3 class="text-lg font-bold text-gray-800 mb-2">Precisa de Ajuda?</h3>
+                         <p class="text-sm text-gray-600 mb-4">Clique aqui para ver um guia rápido sobre como utilizar as principais funções do sistema.</p>
+                         <button onclick="openHelpModal()" class="w-full px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" /></svg>
+                            Ver Guia Rápido
+                         </button>
+                    </div>
+                    <div class="p-6 bg-white border border-gray-200 rounded-xl shadow-sm">
+                         <h3 class="text-lg font-bold text-gray-800 mb-2">Fale Conosco</h3>
+                         <p class="text-sm text-gray-600 mb-4">Envie suas sugestões ou reclamações para a administração.</p>
+                         <button onclick="openFeedbackModal()" class="w-full px-4 py-2 bg-gray-700 text-white text-sm font-semibold rounded-lg hover:bg-gray-800 flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" /><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" /></svg>
+                            Enviar Mensagem
+                         </button>
                     </div>
                     <div class="p-6 bg-blue-50 border border-blue-200 rounded-xl shadow-sm">
                         <h3 class="text-lg font-bold text-blue-900 mb-4 flex items-center gap-2">
@@ -373,38 +436,6 @@
                         <div id="admin-notices-display" class="space-y-3 text-sm text-blue-800 max-h-48 overflow-y-auto pr-2">
                             <p class="text-blue-700 animate-pulse">Carregando recados...</p>
                         </div>
-                    </div>
-                </div>
-
-                <!-- Coluna da Direita: Links -->
-                <!-- Links Úteis & Feedback -->
-                <div class="space-y-4">
-                    <div class="p-6 bg-white border border-gray-200 rounded-xl shadow-sm">
-                         <h3 class="text-lg font-bold text-gray-800 mb-3">Links Úteis</h3>
-                         <div class="space-y-2">
-                             <a href="http://assinador.iti.br/" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
-                                <span class="font-semibold text-gray-700">Assinador Gov.br</span>
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                                    <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
-                                    <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
-                                </svg>
-                             </a>
-                             <a href="https://pdfleader.com/pt/" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
-                                <span class="font-semibold text-gray-700">Assinador PDF Leader</span>
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                                    <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
-                                    <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
-                                </svg>
-                             </a>
-                         </div>
-                    </div>
-                    <div class="p-6 bg-white border border-gray-200 rounded-xl shadow-sm">
-                         <h3 class="text-lg font-bold text-gray-800 mb-2">Fale Conosco</h3>
-                         <p class="text-sm text-gray-600 mb-4">Envie suas sugestões ou reclamações para a administração.</p>
-                         <button onclick="openFeedbackModal()" class="w-full px-4 py-2 bg-gray-700 text-white text-sm font-semibold rounded-lg hover:bg-gray-800 flex items-center justify-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" /><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" /></svg>
-                            Enviar Mensagem
-                         </button>
                     </div>
                 </div>
             </div>
@@ -524,12 +555,12 @@
     <div id="history-view" class="view max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 my-6 sm:my-10 bg-white rounded-2xl shadow-lg">
         <header class="mb-8 flex flex-wrap justify-between items-center gap-4">
             <div>
-                <h1 class="text-2xl sm:text-3xl font-extrabold text-orange-900 tracking-tight">Histórico de Captações</h1>
-                <p class="text-sm text-gray-500 mt-1">Suas fichas salvas no sistema.</p>
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-orange-900 tracking-tight">Minhas Captações</h1>
+                <p class="text-sm text-gray-500 mt-1">Visualize, edite e gerencie todas as suas captações.</p>
             </div>
             <button onclick="showView('dashboard-view')" class="text-sm font-medium text-gray-600 hover:text-orange-600 flex items-center gap-1">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" /></svg>
-                <span>Voltar ao Início</span>
+                <span>Voltar ao Painel</span>
             </button>
         </header>
 
@@ -542,7 +573,7 @@
                 <span id="btn-toggle-filters-text">Mostrar Filtros</span>
             </button>
             <div id="filters-container" class="hidden md:block p-4 bg-gray-50 rounded-lg border">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
                     <!-- Coluna 1: Busca Principal (ocupa 2 colunas no lg) -->
                     <div class="lg:col-span-2">
                         <label for="search-input" class="text-sm font-medium text-gray-700">Buscar por Endereço, ID, CPF ou Proprietário:</label>
@@ -569,15 +600,22 @@
     
                     <!-- Coluna 3: Filtro por Data -->
                     <div>
-                        <label for="filter-date" class="text-sm font-medium text-gray-700">Filtrar por data:</label>
-                        <div class="relative mt-1">
-                            <input type="date" id="filter-date" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm pr-8">
-                            <button id="btn-clear-date-filter" title="Limpar filtro" class="hidden absolute inset-y-0 right-0 px-2 flex items-center text-gray-400 hover:text-gray-600">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
+                        <label for="filter-date-start" class="text-sm font-medium text-gray-700">Data de Início:</label>
+                        <input type="date" id="filter-date-start" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="filter-date-end" class="text-sm font-medium text-gray-700">Data Final:</label>
+                        <input type="date" id="filter-date-end" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm">
+                    </div>
+
+                    <!-- Coluna 4: Filtro de Assinatura -->
+                    <div>
+                        <label for="filter-signature" class="text-sm font-medium text-gray-700">Assinatura:</label>
+                        <select id="filter-signature" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm">
+                            <option value="all">Todos</option>
+                            <option value="signed">Assinadas</option>
+                            <option value="not_signed">Não Assinadas</option>
+                        </select>
                     </div>
                 </div>
     
@@ -634,7 +672,7 @@
         
 
         <!-- Lista de Captações -->
-        <p id="history-loading" class="hidden text-center text-gray-500 py-10 flex items-center justify-center gap-2">
+        <p id="history-loading" class="text-center text-gray-500 py-10 flex items-center justify-center gap-2">
             <svg class="animate-spin h-5 w-5 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
             Carregando histórico...
         </p>
@@ -645,26 +683,15 @@
         </div>
         <div id="history-list" class="space-y-4">
             <!-- Itens do histórico serão inseridos aqui pelo JS -->
-            <p id="history-loading" class="text-center text-gray-500 py-10 flex items-center justify-center gap-2">
-                <svg class="animate-spin h-5 w-5 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                Carregando histórico...
-            </p>
-            <div id="history-no-data" class="hidden text-center py-10">
-                <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" /></svg>
-                <p class="mt-4 text-lg font-medium text-gray-600">Nenhuma captação encontrada.</p>
-                <p class="text-gray-500">Comece uma nova captação ou ajuste seus filtros.</p>
-            </div>
         </div>
 
         <!-- Carregar Mais -->
-        <div id="load-more-container" class="text-center mt-8 hidden">
-            <button id="btn-load-more" class="px-6 py-2 bg-orange-100 text-orange-800 font-semibold rounded-lg hover:bg-orange-200 transition-all flex items-center gap-2 mx-auto">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd" /></svg>
-                <span>Carregar Mais</span>
-            </button>
+        <div id="pagination-container" class="hidden mt-8 flex justify-between items-center text-sm">
+            <button id="btn-prev-page" class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">&larr; Anterior</button>
+            <span id="page-info" class="font-medium text-gray-600"></span>
+            <button id="btn-next-page" class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Próxima &rarr;</button>
         </div>
     </div>
-
     <!-- 
     ========================================================================
     MOLDE DO PDF (Fica invisível na tela web, mas é renderizado na geração)
@@ -782,6 +809,12 @@
             <div class="pdf-cell"><span class="pdf-label">DOCUMENTAÇÃO</span><span class="pdf-value out-documentacao"></span></div>
             <div class="pdf-cell"><span class="pdf-label">ACEITA PERMUTA?</span><span class="pdf-value out-permuta"></span></div>
         </div>
+        <div class="pdf-row out-permuta-obs-row" style="display: none;">
+            <div class="pdf-cell">
+                <span class="pdf-label">DETALHES DA PERMUTA</span>
+                <span class="pdf-value out-permuta-obs"></span>
+            </div>
+        </div>
         <div class="pdf-row">
             <div class="pdf-cell"><span class="pdf-label">HONORÁRIOS (COMISSÃO)</span><span class="pdf-value font-bold out-valor-comissao"></span></div>
             <div class="pdf-cell" style="flex: 2;"><span class="pdf-label">EXCLUSIVIDADE PERSONAL?</span><span class="pdf-value out-valor-exclusividade"></span></div>
@@ -793,17 +826,122 @@
             <!-- O texto do termo será carregado aqui pelo JavaScript -->
         </div>
 
-        <div class="signature-box" style="justify-content: center; margin-top: 100px;">
-            <div class="signature-line" style="width: 60%;">
-                Assinatura do Proprietário
+        <div class="signature-box" style="justify-content: center; margin-top: 50px;">
+            <div style="width: 70%; text-align: center;">
+                <div style="min-height: 65px; display: flex; align-items: flex-end; justify-content: center;">
+                    <img id="pdf-signature-image" src="" style="max-height: 60px; max-width: 90%; object-fit: contain;">
+                </div>
+                <div style="border-top: 1px solid #000; padding-top: 2px; font-size: 9px; font-weight: bold;">
+                    Assinatura do Proprietário
+                </div>
             </div>
         </div>
         
-        <div style="text-align: center; margin-top: 20px; font-size: 8px; color: #777;">
-            Data de Cadastro: <span class="out-data"></span> &nbsp;|&nbsp; ID: <span class="out-id"></span>
+        <div class="pdf-footer" style="position: absolute; bottom: 7mm; left: 7mm; right: 7mm; font-size: 7px; color: #555; text-align: center; border-top: 1px solid #ccc; padding-top: 4px; line-height: 1.3; font-weight: normal;">
+            <div id="pdf-footer-details">
+                <!-- Details will be injected here -->
+            </div>
         </div>
     </div>
 
+    <!-- ======================================================================== -->
+    <!-- MODAL DE AJUDA -->
+    <!-- ======================================================================== -->
+    <div id="help-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 transition-opacity duration-300 opacity-0">
+        <div id="help-modal-content" class="bg-gray-50 rounded-xl shadow-2xl max-w-2xl w-full transform transition-all duration-300 scale-95 opacity-0">
+            <!-- Header -->
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div class="bg-green-100 p-2 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800">Guia Rápido do CaptaFácil</h3>
+                </div>
+                <button onclick="closeHelpModal()" class="text-gray-400 hover:text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full p-1.5 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+
+            <!-- Content -->
+            <div class="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-orange-100 text-orange-600 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-gray-800">Nova Captação</h4>
+                        <p class="text-sm text-gray-600 mt-1">Clique em "Nova Captação" para iniciar o preenchimento de uma ficha de imóvel. O formulário é dividido em etapas para facilitar.</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-orange-100 text-orange-600 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-gray-800">Minhas Captações</h4>
+                        <p class="text-sm text-gray-600 mt-1">Acesse o histórico de todas as suas captações. Você pode buscar, filtrar, editar, gerar PDF e solicitar assinaturas a partir desta tela.</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-orange-100 text-orange-600 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-gray-800">Gerar PDF</h4>
+                        <p class="text-sm text-gray-600 mt-1">Em "Minhas Captações", cada item tem um botão "Gerar PDF". Isso cria a ficha oficial, idêntica à planilha, pronta para impressão ou envio.</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-orange-100 text-orange-600 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-gray-800">Coletar Assinatura Digital</h4>
+                        <p class="text-sm text-gray-600 mt-1">Use o botão "Coletar Assinatura" para gerar um link único. Envie este link para o proprietário, que poderá assinar digitalmente de qualquer dispositivo. O link expira em 48 horas.</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-orange-100 text-orange-600 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-gray-800">Status da Assinatura</h4>
+                        <p class="text-sm text-gray-600 mt-1">Você pode verificar o status da assinatura (Pendente, Assinado, etc.) clicando no selo de status em cada captação no seu histórico.</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-orange-100 text-orange-600 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-gray-800">Fale Conosco</h4>
+                        <p class="text-sm text-gray-600 mt-1">Use o botão "Enviar Mensagem" para enviar sugestões ou relatar problemas diretamente para a administração do sistema.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="bg-white px-6 py-4 border-t border-gray-200 text-right rounded-b-xl">
+                <button onclick="closeHelpModal()" class="px-5 py-2 bg-orange-600 text-white font-semibold rounded-lg shadow-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all">
+                    Entendi
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- ======================================================================== -->
     <!-- RODAPÉ FIXO -->
@@ -905,7 +1043,26 @@
             }
         }
 
-        function populatePrintContainer(data) {
+        function parseUserAgent(ua) {
+            if (!ua) return 'Não registrado';
+            let browser = 'Navegador desconhecido';
+            let os = 'SO desconhecido';
+
+            if (/firefox/i.test(ua)) browser = `Firefox ${ua.match(/Firefox\/([0-9.]+)/)[1]}`;
+            else if (/edg/i.test(ua)) browser = `Edge ${ua.match(/Edg\/([0-9.]+)/)[1]}`;
+            else if (/chrome/i.test(ua) && !/chromium/i.test(ua)) browser = `Chrome ${ua.match(/Chrome\/([0-9.]+)/)[1]}`;
+            else if (/safari/i.test(ua) && !/chrome/i.test(ua)) browser = `Safari ${ua.match(/Version\/([0-9.]+)/)[1]}`;
+
+            if (/windows/i.test(ua)) os = 'Windows';
+            else if (/macintosh/i.test(ua)) os = 'macOS';
+            else if (/android/i.test(ua)) os = 'Android';
+            else if (/iphone|ipad|ipod/i.test(ua)) os = 'iOS';
+            else if (/linux/i.test(ua)) os = 'Linux';
+
+            return `${browser} em ${os}`;
+        }
+
+        function populatePrintContainer(data, signatureData = null) {
             const setText = (selector, value, upper = false) => {
                 document.querySelectorAll(selector).forEach(el => {
                     let finalValue = value || '-';
@@ -927,11 +1084,33 @@
                 return dateString; // Fallback for already formatted dates
             };
 
-            setText('.out-data', formatDate(data.createdAt || data.dataCadastro));
-            setText('.out-corretor-nome', data.corretorNome, true);
+            // Clear previous signature image
+            const sigImg = document.getElementById('pdf-signature-image');
+            if (sigImg) sigImg.src = '';
+
+            // Populate footer details
+            const footerDetails = document.getElementById('pdf-footer-details');
+            if (footerDetails) {
+                let footerParts = [];
+                if (signatureData && signatureData.signatureImage) {
+                    if (sigImg) sigImg.src = signatureData.signatureImage;
+                    const signedDate = new Date(signatureData.signedAt.seconds * 1000).toLocaleString('pt-BR');
+                    footerParts.push(`Assinado por: ${signatureData.ownerName}`);
+                    if (signatureData.ownerCpf) footerParts.push(`CPF: ${signatureData.ownerCpf}`);
+                    footerParts.push(`Data: ${signedDate}`);
+                    footerParts.push(`IP: ${signatureData.clientIp || 'Não registrado'}`);
+                    if (signatureData.deviceInfo && signatureData.deviceInfo.userAgent) footerParts.push(`Dispositivo: ${parseUserAgent(signatureData.deviceInfo.userAgent)}`);
+                }
+
+                footerParts.push(`Data de Cadastro: ${formatDate(data.createdAt || data.dataCadastro)}`);
+                footerParts.push(`ID da Captação: ${data.id ? data.id.substring(0, 6).toUpperCase() : 'N/A'}`);
+
+                footerDetails.innerHTML = footerParts.join(' &nbsp;|&nbsp; ');
+            }
+
+            setText('.out-corretor-nome', data.corretorNome || data.owner_email, true);
             setText('.out-codigo-imovel', data.codigoImovel, true);
 
-            // Handle Foto/Placa checkboxes
             const fotoBox = document.querySelector('#print-container .out-tem-foto');
             if (fotoBox) fotoBox.innerHTML = data.temFoto ? '✓' : '&nbsp;';
             
@@ -991,20 +1170,29 @@
             setText('.out-taxa-mensal', data.taxaMensal ? `${data.taxaMensal}%` : '');
             setText('.out-documentacao', data.documentacao, true);
             setText('.out-permuta', data.permuta, true);
+
+            const permutaObsRow = document.querySelector('#print-container .out-permuta-obs-row');
+            if (data.permuta === 'Sim' && data.permutaObs) {
+                setText('.out-permuta-obs', data.permutaObs, true);
+                if (permutaObsRow) permutaObsRow.style.display = 'flex';
+            } else {
+                setText('.out-permuta-obs', '');
+                if (permutaObsRow) permutaObsRow.style.display = 'none';
+            }
+
             setText('.out-valor-comissao', data.valorComissao ? `${data.valorComissao}%` : '');
             setText('.out-valor-exclusividade', data.valorExclusividade, true);
-            setText('.out-id', data.id ? data.id.substring(0, 6).toUpperCase() : 'N/A');
             document.getElementById('out-termo-pdf').innerText = termoAutorizacaoGlobal;
         }
 
-        async function generatePDF(data, button) {
+        async function generatePDF(data, button, signatureData = null) {
             const originalHtml = button.innerHTML;
             showGlobalSpinner();
             button.disabled = true;
             button.innerHTML = `<svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Gerando...`;
 
             try {
-                populatePrintContainer(data);
+                populatePrintContainer(data, signatureData);
                 const element = document.getElementById('print-container');
                 const canvas = await html2canvas(element, { scale: 2, useCORS: true, logging: false });
                 const imgData = canvas.toDataURL('image/jpeg', 1.0);
@@ -1023,6 +1211,201 @@
                 button.disabled = false;
                 button.innerHTML = originalHtml;
                 hideGlobalSpinner();
+            }
+        }
+
+        async function generateSignatureLink(captureId) {
+            showGlobalSpinner();
+            try {
+                // Primeiro, busca os dados da captação para obter informações não sensíveis
+                const captureDoc = await db.collection('captacoes').doc(captureId).get();
+                if (!captureDoc.exists) {
+                    throw new Error("Documento da captação não encontrado.");
+                }
+                reads++;
+                const captureData = captureDoc.data();
+
+                const token = [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
+                const expires = new Date();
+                expires.setDate(expires.getDate() + 2); // Token expires in 48 hours
+                const expiresTimestamp = firebase.firestore.Timestamp.fromDate(expires);
+
+                const linkData = {
+                    captureId: captureId,
+                    expiresAt: expiresTimestamp,
+                    propertyAddress: `${captureData.imovelEndereco || ''}, ${captureData.imovelNumero || 'S/N'} - ${captureData.imovelBairro || ''}`,
+                    ownerName: captureData.propNome || '',
+                };
+
+                if (captureData.propCpf) {
+                    linkData.ownerCpf = captureData.propCpf;
+                }
+
+                // 1. Cria o documento público para o link de assinatura PRIMEIRO
+                const linkRef = db.collection('signature_links').doc(token);
+                await linkRef.set(linkData);
+
+                // 2. DEPOIS, atualiza a captação original com o status e token
+                const captureRef = db.collection('captacoes').doc(captureId);
+                await captureRef.update({
+                    signatureToken: token,
+                    signatureTokenExpires: expiresTimestamp,
+                    signatureStatus: 'pending'
+                });
+
+                writes++;
+                updateCounters();
+
+                const signatureUrl = `${window.location.origin}${window.location.pathname.replace('home.html', '')}assinatura.html?token=${token}`;
+                
+                document.getElementById('signature-link-url').innerText = signatureUrl;
+                document.getElementById('signature-link-modal').classList.remove('hidden');
+                
+                logActivity('SIGNATURE_LINK_GENERATED', { captureId });
+                historyCache = []; // Invalida o cache. Será recarregado quando a visualização for aberta ou atualizada.
+            } catch (error) {
+                console.error("Error generating signature link:", error);
+                showAlert('Falha ao gerar o link de assinatura. Detalhe: ' + error.message, 'Erro');
+            } finally {
+                hideGlobalSpinner();
+            }
+        }
+
+        function copySignatureLink() {
+            const link = document.getElementById('signature-link-url').innerText;
+            navigator.clipboard.writeText(link).then(() => {
+                showAlert('Link copiado para a área de transferência!', 'Sucesso');
+            }, () => {
+                showAlert('Falha ao copiar o link.', 'Erro');
+            });
+        }
+
+        function openHelpModal() {
+            const modal = document.getElementById('help-modal');
+            const modalContent = document.getElementById('help-modal-content');
+            if (!modal || !modalContent) return;
+
+            modal.classList.remove('hidden');
+            // Use a short timeout to allow the display property to change before starting the transition
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modalContent.classList.remove('scale-95', 'opacity-0');
+            }, 10);
+        }
+
+        function closeHelpModal() {
+            const modal = document.getElementById('help-modal');
+            const modalContent = document.getElementById('help-modal-content');
+            if (!modal || !modalContent) return;
+
+            modal.classList.add('opacity-0');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            // Wait for the transition to finish before hiding the modal
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300); // Should match the duration of the transition
+        }
+
+        async function generatePDFFromHistory(button, captureData) {
+            let signatureData = null;
+            if (captureData.signatureId && captureData.signatureStatus === 'signed') {
+                showGlobalSpinner();
+                try {
+                    const sigDoc = await db.collection('assinaturas').doc(captureData.signatureId).get();
+                    reads++;
+                    updateCounters();
+                    if (sigDoc.exists) {
+                        signatureData = sigDoc.data();
+                    }
+                } catch (e) {
+                    console.error("Error fetching signature for PDF:", e);
+                    showAlert('Não foi possível carregar os dados da assinatura para o PDF.', 'Erro');
+                    hideGlobalSpinner();
+                    return; // Não prosseguir se a busca da assinatura falhar
+                }
+            }
+            await generatePDF(captureData, button, signatureData);
+        }
+
+        async function showSignatureStatus(captureId) {
+            const modal = document.getElementById('signature-status-modal');
+            const content = document.getElementById('signature-status-content');
+            
+            modal.classList.remove('hidden');
+            content.innerHTML = '<p class="animate-pulse">Carregando dados da assinatura...</p>';
+
+            try {
+                const captureDoc = await db.collection('captacoes').doc(captureId).get();
+                reads++;
+                updateCounters();
+
+                if (!captureDoc.exists) {
+                    content.innerHTML = '<p class="text-red-500">Erro: Captação não encontrada.</p>';
+                    return;
+                }
+
+                const captureData = captureDoc.data();
+                const status = captureData.signatureStatus;
+                const currentSignatureId = captureData.signatureId;
+
+                if (status === 'signed' && currentSignatureId) {
+                    const sigDoc = await db.collection('assinaturas').doc(currentSignatureId).get();
+                    reads++;
+                    updateCounters();
+                    if (!sigDoc.exists) {
+                        content.innerHTML = `<p class="text-red-500">Erro: A assinatura vinculada (ID: ${currentSignatureId}) não foi encontrada.</p>`;
+                        return;
+                    }
+                    const sigData = sigDoc.data();
+                    const signedDate = sigData.signedAt ? new Date(sigData.signedAt.seconds * 1000).toLocaleString('pt-BR') : 'Data não registrada';
+                    let deviceInfoHtml = '';
+                    if (sigData.deviceInfo && sigData.deviceInfo.userAgent) {
+                        deviceInfoHtml = `<p class="mt-2 pt-2 border-t text-xs text-gray-500"><strong>Dispositivo:</strong> ${parseUserAgent(sigData.deviceInfo.userAgent)}</p>`;
+                    }
+                    content.innerHTML = `
+                        <p><strong>Proprietário:</strong> ${sigData.ownerName}</p>
+                        ${sigData.ownerCpf ? `<p><strong>CPF:</strong> ${sigData.ownerCpf}</p>` : ''}
+                        <p><strong>Data da Assinatura:</strong> ${signedDate}</p>
+                        <p><strong>Endereço IP:</strong> ${sigData.clientIp || 'Não registrado'}</p>
+                        ${deviceInfoHtml}
+                        <div class="mt-4 pt-4 border-t"><p class="font-semibold mb-2">Assinatura:</p><div class="bg-gray-100 border rounded-md p-2 flex justify-center"><img src="${sigData.signatureImage}" alt="Assinatura" class="h-20 object-contain"></div></div>`;
+                } else if (status === 'pending') {
+                    const expiryDate = captureData.signatureTokenExpires ? new Date(captureData.signatureTokenExpires.seconds * 1000).toLocaleString('pt-BR') : 'N/A';
+                    content.innerHTML = `<p>Um link de assinatura foi gerado e está aguardando o proprietário assinar.</p><p class="text-sm text-gray-500 mt-2">O link expira em: ${expiryDate}</p>`;
+                } else {
+                    content.innerHTML = '<p>Esta captação não possui uma assinatura digital válida no momento.</p>';
+                }
+            } catch (error) {
+                console.error("Erro ao buscar status da assinatura:", error);
+                content.innerHTML = '<p class="text-red-500">Ocorreu um erro ao buscar os detalhes da assinatura.</p>';
+            }
+        }
+
+        function handleSignatureRequest(captureId, isAlreadySigned) {
+            if (isAlreadySigned) {
+                showConfirm(
+                    'Esta captação já possui uma assinatura. Gerar um novo link irá desvincular a assinatura atual e exigir uma nova coleta. Deseja continuar?',
+                    'Atenção: Nova Assinatura',
+                async () => {
+                        // Logic to unlink old signature before generating new one
+                        const captureRef = db.collection('captacoes').doc(captureId);
+                    try {
+                        await captureRef.update({
+                            signatureId: firebase.firestore.FieldValue.delete(),
+                            signatureStatus: 'revoked'
+                        });
+                        await logActivity('SIGNATURE_REVOKED', { captureId });
+                            historyCache = []; // Invalida o cache para forçar a releitura
+                        await generateSignatureLink(captureId);
+                        fetchAllHistory(); // Força a atualização da lista
+                    } catch (error) {
+                            console.error("Error revoking signature: ", error);
+                            showAlert('Falha ao revogar a assinatura anterior.', 'Erro');
+                    }
+                    }
+                );
+            } else {
+            generateSignatureLink(captureId).then(() => fetchAllHistory());
             }
         }
 
@@ -1058,10 +1441,10 @@
         function setGreetingMessage(userName, userData) {
             const greetingEl = document.getElementById('greeting-message');
             if (!greetingEl) return;
+            const hoje = new Date();
 
             // Birthday check
             if (userData && userData.dataNascimento) {
-                const hoje = new Date();
                 const aniversario = new Date(userData.dataNascimento + 'T00:00:00');
                 if (hoje.getDate() === aniversario.getDate() && hoje.getMonth() === aniversario.getMonth()) {
                     greetingEl.innerHTML = `
@@ -1077,10 +1460,29 @@
                 }
             }
 
-            const now = new Date(); // Moved down
-            const hour = now.getHours();
-            const dayOfWeek = now.getDay(); // 0=Sun, 2=Tue
-            const dayOfMonth = now.getDate();
+            // Work Anniversary check
+            if (userData && userData.dataEntrada) {
+                const aniversarioEmpresa = new Date(userData.dataEntrada + 'T00:00:00');
+                if (hoje.getDate() === aniversarioEmpresa.getDate() && hoje.getMonth() === aniversarioEmpresa.getMonth()) {
+                    const anosDeEmpresa = hoje.getFullYear() - aniversarioEmpresa.getFullYear();
+                    if (anosDeEmpresa > 0) { // Não mostra no primeiro dia de empresa
+                        greetingEl.innerHTML = `
+                            <div class="flex items-center gap-3">
+                                <span class="text-2xl">🎉</span>
+                                <div>
+                                    <h2 class="text-xl font-bold text-gray-800">Feliz Aniversário de Empresa!</h2>
+                                    <p class="text-blue-600 font-semibold">Parabéns, ${userName.split(' ')[0]}, por seus ${anosDeEmpresa} anos conosco!</p>
+                                </div>
+                            </div>
+                        `;
+                        return; // Para a execução para não mostrar a saudação normal
+                    }
+                }
+            }
+
+            const hour = hoje.getHours();
+            const dayOfWeek = hoje.getDay(); // 0=Sun, 2=Tue
+            const dayOfMonth = hoje.getDate();
         
             let greetingText = '';
             let iconSvg = '';
@@ -1102,7 +1504,7 @@
         
             let specialMessage = '';
             // Check for the first three Tuesdays of the month
-            if (dayOfWeek === 2 && dayOfMonth <= 21 && userData && userData.team === 'Locação') {
+            if (dayOfWeek === 2 && dayOfMonth <= 21 && userData && userData.equipe === 'Locação') {
                 specialMessage = 'Hoje é dia de entregar as fichas de captação!';
             }
             // Use the passed userName directly, with a fallback
@@ -1133,6 +1535,23 @@
             confirmCallback = null;
         }
 
+        function copyToClipboard(text, message = 'Copiado!') {
+            navigator.clipboard.writeText(text).then(() => {
+                // Create a temporary toast-like notification
+                const toast = document.createElement('div');
+                toast.innerText = message;
+                toast.className = 'fixed bottom-24 right-5 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg text-sm z-[10000] transition-opacity duration-300';
+                document.body.appendChild(toast);
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    setTimeout(() => toast.remove(), 300);
+                }, 2000);
+            }).catch(err => {
+                console.error('Falha ao copiar:', err);
+                showAlert('Falha ao copiar para a área de transferência.', 'Erro');
+            });
+        }
+
         // ========================================================================
         // LÓGICA PRINCIPAL DA APLICAÇÃO (FIREBASE, VIEWS, AUTH)
         // ========================================================================
@@ -1153,12 +1572,11 @@
         const db = firebase.firestore();
         const adminEmail = "gui.mont0ani@gmail.com";
 
-        let currentUser = null;
+        let currentUser = null; // Global variable to store current user
         // Inicializa contadores a partir do sessionStorage para persistir na sessão
         let reads = parseInt(sessionStorage.getItem('firebaseReads')) || 0;
         let writes = parseInt(sessionStorage.getItem('firebaseWrites')) || 0;
-        let lastVisibleDoc = null; // Para paginação do histórico
-        let historyListener = null;
+        let historyUnsubscribe = null; // Unsubscribe function for the history listener
         let noticesListener = null;
         let allHistoryData = []; // Store all fetched history data for client-side filtering
         let recentCapturesListener = null;
@@ -1167,7 +1585,7 @@
 
         // Contadores de Leitura/Escrita
         let displayedItems = [];
-        const pageSize = 10;
+        const pageSize = 5;
         let currentPage = 1;
 
 
@@ -1184,7 +1602,7 @@
 
             if (viewId === 'form-view') {
                 // resetForm(); // This is handled by form.html itself
-                updateLivePreview(); // Popula o preview com os valores iniciais
+                // updateLivePreview(); // This function does not exist in home.html, it's in form.html
             }
             if (viewId === 'history-view') {
                 fetchAllHistory();
@@ -1224,152 +1642,89 @@
             inactivityTimer = setTimeout(logoutInactiveUser, 10 * 60 * 1000); // 10 minutos
         }
 
-        // Pega todos os dados do formulário e retorna um objeto
-        function getFormData() {
-            let infraSelecionadas = [];
-            document.querySelectorAll('.carac-imovel-chk:checked').forEach(chk => infraSelecionadas.push(chk.value));
-            
-            let infraCondoSelecionadas = [];
-            document.querySelectorAll('.carac-condo-chk:checked').forEach(chk => infraCondoSelecionadas.push(chk.value));
-
-            let tipologiasSelecionadas = [];
-            document.querySelectorAll('.imovel-tipologia-chk:checked').forEach(chk => tipologiasSelecionadas.push(chk.value));
-
-            const logoPersonal = 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iQ2FtYWRhXzIiIGRhdGEtbmFtZT0iQ2FtYWRhIDIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDYxMS4xMyAxMTUuMzMiPgogIDxkZWZzPgogICAgPHN0eWxlPgogICAgICAuY2xzLTEtYWJvdXQgewogICAgICAgIGZpbGw6ICMwNjJlNDc7CiAgICAgIH0KCiAgICAgIC5jbHMtMi1hYm91dCB7CiAgICAgICAgZmlsbDogI2ViOTQyZTsKICAgICAgfQoKICAgICAgLmNscy0zLWFib3V0IHsKICAgICAgICBmaWxsOiAjMDYyZTQ2OwogICAgICB9CgogICAgICAuY2xzLTQtYWJvdXQgewogICAgICAgIGZpbGw6ICNhOTNhMzk7CiAgICAgIH0KCiAgICAgIC5jbHMtNS1hYm91dCB7CiAgICAgICAgZmlsbDogI2ZmZjdjNzsKICAgICAgfQoKICAgICAgLmNscy02LWFib3V0IHsKICAgICAgICBmaWxsOiAjMDgyZDQ2OwogICAgICB9CiAgICA8L3N0eWxlPgogIDwvZGVmcz4KICA8ZyBpZD0iQ2FtYWRhXzEtMi1hYm91dCIgZGF0YS1uYW1lPSJDYW1hZGEgMSI+CiAgICA8Zz4KICAgICAgPGc+CiAgICAgICAgPGc+CiAgICAgICAgICA8Zz4KICAgICAgICAgICAgPHBvbHlnb24gY2xhc3M9ImNscy00LWFib3V0IiBwb2ludHM9IjU0LjgyIDAgOTIuNzEgMjMuMjUgOTIuNzEgODMuMTkgNTQuODIgODMuMTkgNTQuODIgMCIvPgogICAgICAgICAgICA8cG9seWdvbiBjbGFzcz0iY2xzLTUtYWJvdXQiIHBvaW50cz0iNTQuODIgMCAxNi45NCAyMy4yNSAxNi45NCA4My4xOSA1NC44MiA4My4xOSA1NC44MiAwIi8+CiAgICAgICAgICAgIDxwYXRoIGNsYXNzPSJjbHMtNC1hYm91dCIgZD0ibTQ4LjQ0LDE1LjY0Yy0uNTItLjc4LTEuNjUtMi40OC0zLjY5LTMuMTMtMS41My0uNDktMy0uMi00LDAtMi4xLjQzLTMuNTYsMS4zMi00LDEuNTktMi43MiwxLjY2LTkuNTYsNS41My0xOC42NSwxMC43NC0uMDgsMTkuNC4wOCwzOC45NCwwLDU4LjM1LDMuMy4wNSw2LjYxLDAsOS45MS4wNS4wNS04LjIyLS4wMi0xNi41My4wMy0yNC43NSwyLjMxLS4wNiw3LjU2LS41MiwxMi42NC00LjEsNC42Ny0zLjMsNi42Ni03LjQ3LDguMTMtMTAuNjYsNS44My0xMi42NywxLjk3LTI0LjU4LS4zNi0yOC4wOVptLTE1LjE1LDI4LjQxYy0uNzkuNDgtMi40NCwxLjMtNC44OCwxLjM1LjAxLTQuNzMuMDMtOS40Ni4wNC0xNC4xOS44Mi0uNjYsMi40MS0xLjczLDQuNTgtMS44OC44OS0uMDcsMi4xNy0uMTYsMy4yNS42MiwxLjI0LjksMS40OSwyLjQzLDEuNjQsMy40MS40OSwzLjI2LS41Niw4LjI1LTMuNjEsMTAuNjlaIi8+CiAgICAgICAgICAgIDxnPgogICAgICAgICAgICAgIDxwb2x5Z29uIGNsYXNzPSJjbHMtMi1hYm91dCIgcG9pbnRzPSIxNi45MiAyMy4yNSAxNi45MiA4My4xOSAxOC42OSA4My4xOSAxOC42OSAyMi4xNyAxNi45MiAyMy4yNSIvPgogICAgICAgICAgICAgIDxwb2x5Z29uIGNsYXNzPSJjbHMtMi1hYm91dCIgcG9pbnRzPSIyMC45IDIwLjgxIDIwLjkgODMuMTkgMjIuNjggODMuMTkgMjIuNjggMTkuNzIgMjAuOSAyMC44MSIvPgogICAgICAgICAgICAgIDxwb2x5Z29uIGNsYXNzPSJjbHMtMi1hYm91dCIgcG9pbnRzPSIyNC45NSAxOC4zMyAyNC45NSA4My4xOSAyNi43MiA4My4xOSAyNi43MiAxNy4yNCAyNC45NSAxOC4zMyIvPgogICAgICAgICAgICAgIDxwb2x5Z29uIGNsYXNzPSJjbHMtMi1hYm91dCIgcG9pbnRzPSIyOC45NCAxNS44OCAyOC45NCA4My4xOSAzMC43MSA4My4xOSAzMC43MSAxNC43OSAyOC45NCAxNS44OCIvPgogICAgICAgICAgICAgIDxwb2x5Z29uIGNsYXNzPSJjbHMtMi1hYm91dCIgcG9pbnRzPSIzMy4wOCAxMy4zNCAzMy4wOCA4My4xOSAzNC44NiA4My4xOSAzNC44NiAxMi4yNSAzMy4wOCAxMy4zNCIvPgogICAgICAgICAgICAgIDxwb2x5Z29uIGNsYXNzPSJjbHMtMi1hYm91dCIgcG9pbnRzPSIzNy4wNyAxMC44OSAzNy4wNyA4My4xOSAzOC44NCA4My4xOSAzOC44NCA5LjggMzcuMDcgMTAuODkiLz4KICAgICAgICAgICAgICA8cG9seWdvbiBjbGFzcz0iY2xzLTItYWJvdXQiIHBvaW50cz0iNDEuMTIgOC40IDQxLjEyIDgzLjE5IDQyLjg5IDgzLjE5IDQyLjg5IDcuMzEgNDEuMTIgOC40Ii8+CiAgICAgICAgICAgICAgPHBvbHlnb24gY2xhc3M9ImNscy0yLWFib3V0IiBwb2ludHM9IjQ1LjExIDUuOTUgNDUuMTEgODMuMTkgNDYuODggODMuMTkgNDYuODggNC44NiA0NS4xMSA1Ljk1Ii8+CiAgICAgICAgICAgICAgPHBvbHlnb24gY2xhc3M9ImNscy0yLWFib3V0IiBwb2ludHM9IjQ5LjA0IDMuNTQgNDkuMDQgODMuMTkgNTAuODIgODMuMTkgNTAuODIgMi40NSA0OS4wNCAzLjU0Ii8+CiAgICAgICAgICAgICAgPHBvbHlnb24gY2xhc3M9ImNscy0yLWFib3V0IiBwb2ludHM9IjUzLjAzIDgzLjE5IDU0LjgxIDgzLjE5IDU0LjgxIDAgNTMuMDMgMS4wOSA1My4wMyA4My4xOSIvPgogICAgICAgICAgICA8L2c+CiAgICAgICAgICA8L2c+CiAgICAgICAgICA8Zz4KICAgICAgICAgICAgPHBhdGggY2xhc3M9ImNscy0xLWFib3V0IiBkPSJtMjI3LjcxLDgyLjE3aDE2LjZjMi4wNy02LjE0LDQuMTMtMTIuMjcsNi4yLTE4LjQxLjM5LTEuMjEsMS45NS01LjU4LDYuMi03LjgyLDEuMDItLjU0LDMuMTUtMS42Niw1Ljg3LTEuMjQsMS4yOS4yLDIuMjguNjgsMi45MSwxLjA1LDIuODktMy4yOCw1Ljc3LTYuNTYsOC42Ni05Ljg1LTEuMDctLjU4LTIuODMtMS4zNiw1LjEzLTEuNjUtMy40LS40Mi01Ljk5LjUxLTcuMDYuOTEtNC43OCwxLjc3LTcuMzUsNS4zOS04LjI1LDYuODIuODMtMi4yOSwxLjY1LTQuNTgsMi40OC02Ljg3aC0xNS4xNmMtNC40MywxMi4zNS04Ljg3LDI0LjctMTMuMywzNy4wNVoiLz4KICAgICAgICAgICAgPHBhdGggY2xhc3M9ImNscy0xLWFib3V0IiBkPSJtMjY2LjcyLDcyLjAxYzUuNDQtLjI0LDEwLjg3LS40OCwxNi4zMS0uNzIuMTMuNjguNDUsMS43NiwxLjI5LDIuNzcsMS4wOCwxLjI5LDIuNDEsMS43MywzLjE4LDEuOTksMS4yMy40MSwyLjIyLjQyLDMuMDQuNDMsMS45Ny4wMiwzLjQtLjQ0LDMuNzYtLjU1LjY1LS4yMiwxLjU2LS41MywyLjU0LTEuMjcuNjgtLjUxLDEuNTktMS4yLDEuOTMtMi40MS4wOS0uMzMuMy0xLjA0LDAtMS43Ni0uMzItLjc3LTEuMDMtMS4xOC0xLjk2LTEuNTctMi40Ni0xLjA0LTQuMzktMS4xOS00LjM5LTEuMTlzLTMuMzktLjI2LTcuOTItMS4xOWMtNS4yMi0xLjA3LTYuOTQtMi41NS03LjM5LTIuOTYtLjY4LS42MS0xLjYxLTEuNDUtMi4xNS0yLjg2LTEuMzgtMy41OSwxLjE1LTAuMzEsMS43Ni04LjIsMS4zMy0xLjk2LDIuODYtMi45Niw0LjQzLTQuMDEsNC42NC0zLjA2LDkuMzItMy42MywxMS40LTMuODYuOTAtLjEsMS43NS0uMTMsMy40My0uMTksNC41OS0uMTcsNy44OC4wNyw4Ljg3LjE0LDMuOTYuMzEsNS45Ny40OCw3LjgyLDEuNDMuODguNDUsMi42NSwxLjM5LDQuMDEsMy40MywxLjA1LDEuNTcsMS4zOSwzLjEsMS41Myw0LjAxLTUuMjEuMy0xMC40My42LTE1LjY0LjkxLS4wOS0uNDgtLjM1LTEuNDYtMS4xNy0yLjI0LS4zMi0uMy0uNzItLjU4LTEuNDMtLjg2LTIuNDYtLjk3LTQuODktLjU1LTUuOS0uMzYtLjk2LjE4LTEuNzUuMzMtMi42OC44Ni0uNzQuNDItMS44OSwxLjA2LTIuMzYsMi40MS0uMDguMjItLjY5LDEuOTYuMzgsMy4xNS42OS43NiwxLjY4Ljg1LDEuOTYuODYsMi41OC4xLDUuMTUuMTksNy43My4yOSwzLjc3LjA5LDYuNjYuODMsOC41MywxLjQ2LDIuMzMuNzgsMy4zNywxLjQ5LDQuMTUsMi4yNy4zNy4zNiwxLjcsMS43NywyLjIsMy45Ljk4LDQuMTktMi4wNSw3Ljg4LTMuMDUsOS4xMS0xLjk1LDIuMzgtNC4xLDMuNDgtNi4zNCw0LjYzLTQuMDUsMi4wNy03LjYxLDIuNjMtOS40OSwyLjkxLTIuMDMuMy00LjE2LjMtOC40NC4yOS00LjYxLDAtNi44LS4yNy04LjItLjQ4LTIuNjMtLjM5LTMuOTUtLjU5LTUuNDgtMS4zNC0xLjAyLS40OS00LjE3LTIuMDItNS41OC01LjUzLS41OS0xLjQ3LS42OC0yLjgxLS42Ny0zLjY3WiIvPgogICAgICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTEtYWJvdXQiIGQ9Im0zOTAuNjEsNDUuMDJjNC45MS0uMDIsOS44Mi0uMDUsMTQuNzQtLjA3LS40MywyLjA3LS44Niw0LjE1LDEuMjksNi4yMiwxLjk4LTEuODUsNC41My0zLjcxLDguNTgtNS4yLDMuMTQtMS4xNiw1LjUtMS42Miw2LjE1LTEuNjcsMi4zMS0uMTgsNy4yOS0uNDMsMTEuMDIsMiwwLjk4LjY0LDIuNDUsMi4wMywzLjM0LDQuMDUsMSwyLjI2LjQzLDQuNzIuMSw2LjEzLTEuMDksNC41OC00LjI4LDE0LjItOS4xNiwyNi43My01LjcyLjAyLTExLjQyLS4wMi0xNy4xNCwwLDEuOTgtNC43NiwzLjgyLTkuNDgsNS43LTE0LjY0Ljk4LTIuNjgsMS45MS01LjMzLDIuNzktNy45NC4wNy0uMjkuNjYtMy4wMS0xLTQuNTgtLjc0LS43LTEuNjEtLjg3LTIuMzYtMS0yLjY0LS40OC00Ljg2LjY4LTUuNzIsMS4xNC0yLjU2LDEuMzgtMy44OCwzLjQ4LTQuNDMsNC41MS0uOSwyLjE4LTEuNzgsNC40Mi0yLjY1LDYuNzItMi4wNCw1LjQyLTQuMDUsMTAuNzMtNS41NiwxNS43OC01LjU2LjAyLTEwLjg1LDAtMTYuNC4wMiw0LjQzLTEyLjQ5LDguODctMjUuNzMsMTMuMy0zOC4yMloiLz4KICAgICAgICAgICAgPHBhdGggY2xhc3M9ImNscy0xLWFib3V0IiBkPSJtNDg4Ljk4LDgzLjIyYzYuMDQtMTcuMiwxMi40Ni0zNS4wNywxOC41LTUyLjI2LDUuNjYtLjA2LDExLjIuMDYsMTYuODYsMC01Ljk0LDE3LjI0LTEyLjEsMzUuMDItMTguMDUsNTIuMjYtNS43NS4wMi0xMS41Ni0uMDItMTcuMzEsMFoiLz4KICAgICAgICAgICAgPHBhdGggY2xhc3M9ImNscy0xLWFib3V0IiBkPSJtMTc1LjA3LDM1LjQzYy0xLjUyLTIuMzgtNC44Ni00LjU4LTEyLjAxLTQuMmgtMzMuMTlsLTE4LjQ3LDUxLjk4aDE5LjA5bDYuMTUtMTkuMzZjNDAuNjMsNC42LDQyLjU0LTIxLjE3LDM4LjQzLTI4LjQyWm0tMTkuMDcsMTYuNDhjLTIuNTIsMi4xLTUuNTcsMS45My02LjM3LDEuODYtMy0uMDItNi4wMS0uMDUtOS4wMS0uMDcsMS40NS00LjIyLDIuOTEtOC40NCw0LjM2LTEyLjY2LDIuNzIuMDIsNS40NC4wNSw4LjE1LjA3LjI0LDAsNC4wMi4wNiw1LjUxLDIuNzIsMS41OCwyLjgyLS42Myw2LjQtMi42NSw4LjA4WiIvPgogICAgICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTEtYWJvdXQiIGQ9Im0yMjUuNTIsNjUuNzFjLjc2LTEuNzQsMS44My00LjgyLDEuNzItOC43My0uMDctMi4zNC0uMTktNi4yOC0yLjg2LTkuNDQtMy4zNi0zLjk3LTguODMtNC40MS0xMC44Ny00LjU4LDAsMC0xLjgzLS4wMi01LjQ3LS4wNy0zLjAyLS4wNC00LjU2LS4wNi01LjgzLjA3LTIuNTEuMjUtNC4zNC44My01LjQ0LDEuMTQtMy40NS45OS0xMi4yNSwzLjUzLTE3Ljg4LDExLjU5LS45NiwxLjM3LTIuNzEsMy45My0zLjU4LDcuNzMtLjQ2LDItMS45OCw4LjY0LDEuODYsMTMuNTksMy4wMywzLjkxLDcuNSw1LjI3LDkuNTksNS42NSwxLjQxLjI2LDMuNDkuNSw2Ljk0LjU1LDMuMjUuMDQsNS4zOS4wNyw3LjktLjIxLDEuODEtLjIsNS41OS0xLjM4LDkuNjItMy4xMiw1LjA0LTIuMTgsOC41My01LjUxLDEwLjczLTguMTUtNS40OC0uMzgtMTAuOTctLjc2LTE2LjQ1LTEuMTQtLjU3Ljg3LTIuMjksMy4yNi01LjQ0LDQuMTUtMy4wOS44Ny03LjE4LjE5LTguODctMi4yOS0uNDMtLjYzLS42Mi0xLjI3LS43Mi0xLjU3LS43Mi0yLjQzLjIxLTQuNTcuNTctNS4yOSwxMS40OS4wNSwyMi45OS4xLDM0LjQ4LjE0Wm0tMjguOTYtMTEuNWMzLjk0LTMuNjgsMTAuNTktNC4yNywxMy4zMi0xLjc2LjU4LjUzLjk2LDEuMTksMS4wNSwxLjM0LDEuMywyLjI2LjY5LDQuNzEuNTIsNS41OC02LjAxLjAyLTEyLjAyLjAzLTE4LjAzLjA1LjkyLTIuODMsMi4zMy00LjQ1LDMuMTQtNS4yMVoiLz4KICAgICAgICAgICAgPHBhdGggY2xhc3M9ImNscy0xLWFib3V0IiBkPSJtMzc0LjQ0LDUxLjA3Yy0yLjQ1LTQuNjQtOC4xMS03LjE0LTExLjg0LTcuODYtMS44OC0uMzYtNC4wMi0uNDEtNS42My0uNDQtMy41OC0uMDgtNi42LjIxLTguMTYuNDQtMTMuMDksMS45NC0yMC43MiwxMS41Ni0yMC43MiwxMS41Ni0xLjcxLDIuMTYtNC4wOCw1LjIzLTQuOTEsOS45My0uMywxLjczLTEuNCw3Ljk4LDIuMzgsMTIuNzUsMi42OSwzLjQsNi41NSw0LjQsOS4wMiw1LjA0LDIuNDYuNjQsNC40Mi42NSw3LjQ0LjY3LjY5LDAsNS4xLjAyLDguODEtLjY3LDIuNDMtLjQ1LDExLjcyLTIuMTYsMTguMTktMTAuMDguNzItLjg4LDEwLjA0LTEyLjU5LDUuNDEtMjEuMzVabS0xOC43MywxNi45OGMtMy40Myw0LjIxLTEwLjMxLDcuMjMtMTQuMDIsNC40OC0zLjc4LTIuOC0zLTEwLjY2LjY3LTE1LjIxLDMuNzUtNC42NSwxMS40My03LDE0Ljk0LTMuODMsMy4zOSwzLjA2LDEuODMsMTAuMzYtMS41OCwxNC41NloiLz4KICAgICAgICAgICAgPHBhdGggY2xhc3M9ImNscy0xLWFib3V0IiBkPSJtNDg2LjI1LDQ4LjQ2Yy0xLjkxLTIuNTktNS4yLTMuMjgtOC4zLTMuOTMtMS44MS0uMzgtNC4xNC0uMzgtOC43My0uMzYtNC4xOC4wMi02LjI3LjAzLTkuMDEuMzYtMS45NC4yMy00LjkxLjU5LTcuNTgsMS41LTIuMjYuNzctNy4yMywyLjkyLTExLjgsOS40NCw1LjAzLjM4LDEwLjA2Ljc2LDE1LjA5LDEuMTQuNTgtLjk0LDIuMTQtMy4xNyw1LjA4LTQuMzYsMCwwLDQuMDQtMS42Myw5LjAxLjU3LjQ4LjIxLDEuMTEuNTQsMS41LDEuMjIuNjIsMS4wNi4zOSwyLjUxLS4yOSwzLjUtLjQ3LjY5LTEuMDgsMS4wNS0xLjQzLDEuMjItMi4xNy4yOS0xOS40NSwyLjY1LTI2Ljc1LDUuMDgtLjY5LjIzLTIuMTQuNzQtMy43OSwxLjc5LTEuNjMsMS4wMy00Ljg2LDMuMDctNi4wMSw2LjkzLS4yOS45Ni0xLjMxLDQuOTMuOTMsNy41OC44My45OCwxLjc2LDEuMzgsMy4wOCwxLjkzLDIuOTEsMS4yMSw1LjQyLDEuMiw5LjAxLDEuMTQsMi4zMS0uMDQsNC43NC0uMDksNy44OC0uODguNjYtLjE3LDIuNjMtLjY4LDUuMDctMS43NywyLjU3LTEuMTUsNC41OC0yLjQ1LDYuMDEtMy41LS4zMywxLjc0LS42NywzLjQ4LTEsNS4yMiw1LjM0LS4wMiwxMC42OC0uMDUsMTYuMDItLjA3LS4yOC0uNzQtLjYyLTEuODgtLjcyLTMuMjktLjE2LTIuMjQuMzctMy45OS43OS01LjIyLDEuODMtNS40Myw1LjI4LTEyLjU0LDUuNzItMTMuNDQuMjEtLjQzLDMuNTQtNy4yOS4yMS0xMS43OVptLTIwLjQyLDIyLjM3Yy00LjIyLDUuNTgtMTMuNjYsNi41NS0xNS44MSwzLjY4LS43MS0uOTUtLjU0LTIuMjEtLjUtMi40Ny4zOS0yLjgsMy45Mi00LjMxLDUuMjItNC44NiwyLjA3LS44OSwzLjI1LS44Miw2Ljk0LTEuNDMsMi44Mi0uNDYsNS4wNi0uOTgsNi40NC0xLjMyLS4xMiwxLjYtLjU2LDQuMTItMi4yOSw2LjRaIi8+CiAgICAgICAgICA8L2c+CiAgICAgICAgICA8Zz4KICAgICAgICAgICAgPHBhdGggY2xhc3M9ImNscy0zLWFib3V0IiBkPSJtMTI1LjE4LDExMC4xNmMtLjg2LDIuODctMi42LDUuMTctNi41Nyw1LjE3LTQuNjYsMC03LjI3LTMuODQtNy4yNy04Ljc0czIuOTEtOC44Miw3LjM1LTguODJjNC4wNiwwLDUuOTQsMi41NSw2LjU0LDUuM2gtMS42N2MtLjcxLTEuOTktMS45Ny0zLjY0LTQuODktMy42NC0zLjQ2LDAtNS42MiwyLjk5LTUuNjIsNy4xczIuMTcsNy4xNSw1LjY0LDcuMTVjMi44OCwwLDQuMDEtMS40OCw0Ljg1LTMuNTJoMS42M1oiLz4KICAgICAgICAgICAgPHBhdGggY2xhc3M9ImNscy0zLWFib3V0IiBkPSJtMTQyLjEsMTA5LjAyYzAsMy4yLTEuNzIsNi4yOC01LjMyLDYuMjgtMy4zMiwwLTUuMjMtMi45OC01LjIzLTYuMjYsMC0zLjQ1LDIuMDMtNi4zLDUuMzItNi4zcyw1LjIzLDMuMDgsNS4yMyw2LjI4Wm0tOC45OC4wMmMwLDIuMzgsMS4zMyw0LjcyLDMuNzIsNC43MnMzLjY5LTIuMTcsMy42OS00LjcxLTEuMzYtNC43Ny0zLjc1LTQuNzctMy42NiwyLjIxLTMuNjYsNC43NloiLz4KICAgICAgICAgICAgPHBhdGggY2xhc3M9ImNscy0zLWFib3V0IiBkPSJtMTQ4Ljk0LDEwNi4wOGMwLTEsMC0yLjEtLjAyLTNoMS40N2MuMDQuNDMuMDYsMS40OS4wNywyLjQuNDMtMS4yNCwxLjUzLTIuNzMsMy43NS0yLjczLDIuMzQsMCwzLjksMS42OSwzLjksNS4wMXY3LjIxaC0xLjUzdi02Ljg3YzAtMi4xMy0uNjktMy43OS0yLjctMy43OS0yLjI5LDAtMy40MiwyLjA4LTMuNDIsNS4wMnY1LjY0aC0xLjUydi04LjlaIi8+CiAgICAgICAgICAgIDxwYXRoIGNsYXNzPSJjbHMtMy1hYm91dCIgZD0ibTE2Ni4xOCwxMTEuMzljLjM5LDEuNTcsMS41MiwyLjQ3LDMuNDksMi40NywyLjExLDAsMi44OS0uODksMi44OS0yLjA5LDAtMS4wOS0uNTMtMS44Ny0zLjI2LTIuMjQtMy40Ny0uNDktNC4xOC0xLjg4LTQuMTgtMy4zN3MxLjAxLTMuNCw0LjE2LTMuNGMzLjQ4LDAsNC4zOSwyLjE3LDQuNDgsMy41MWgtMS41NGMtLjE2LS43Ni0uNTktMi4wOC0zLjA0LTIuMDgtMi4wNywwLTIuNTIsMS4wNy0yLjUyLDEuODIsMCwxLC41MiwxLjYsMi45NiwxLjk3LDMuNzEuNTYsNC40NywxLjg3LDQuNDcsMy42NywwLDIuMTMtMS4zOCwzLjY2LTQuNTIsMy42NnMtNC41OS0xLjQ5LTQuOTUtMy45MmgxLjU1WiIvPgogICAgICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTMtYWJvdXQiIGQ9Im0xODkuNTcsMTExLjVjMCwxLjE2LDAsMi4zMS4wMiwzLjQ3aC0xLjQ2Yy0uMDQtLjMzLS4wNy0xLjI2LS4wOC0yLjE5LS41MSwxLjQ3LTEuNDYsMi41My0zLjcsMi41M3MtMy44MS0xLjM1LTMuODEtNC44MXYtNy40MWgxLjUyvdjcuMDdjMCwxLjg2LjYzLDMuNTcsMi41OSwzLjU3LDIuMzYsMCwzLjM5LTEuNjEsMy4zOS01LjI5di01LjM0aDEuNTJ2OC40M1oiLz4KICAgICAgICAgICAgPHBhdGggY2xhc3M9ImNscy0zLWFib3V0IiBkPSJtMTk3LjIxLDExNC45OHYtMTcuODNoMS41MnYxNy44M2gtMS41MloiLz4KICAgICAgICAgICAgPHBhdGggY2xhc3M9ImNscy0zLWFib3V0IiBkPSJtMjA1LjIzLDEwMy4wOGgyLjA3di0zLjkybDEuNTJ2My45MmgyLjcybDEuNDhoLTIuNzJ2Ni45NWMwLDEuNDcuMzMsMi4xMSwxLjQ3LDIuMTEuMywwLC43NC0uMDIsMS4wMy0uMTF2MS4zN2MtLjQzLjE5LS45LjItMS40My4yLTEuOTgsMC0yLjU5LTEuMDUtMi41OS0zLjR2LTcuMTNoLTIuMDd2LTEuNDhaIi8+CiAgICAgICAgICAgIDxwYXRoIGNsYXNzPSJjbHMtMy1hYm91dCIgZD0ibTIyNy41NiwxMDkuMDJjMCwzLjItMS43Miw2LjI4LTUuMzIsNi4yOC0zLjMyLDAtNS4yMy0yLjk4LTUuMjMtNi4yNiwwLTMuNDUsMi4wMy02LjMsNS4zMi02LjNzNS4yMywzLjA4LDUuMjMsNi4yOFptLTguOTguMDJjMCwyLjM4LDEuMzMsNC43MiwzLjcyLDQuNzJzMy42OS0yLjE3LDMuNjktNC43MS0xLjM2LTQuNzctMy43NS00Ljc3LTMuNjYsMi4yMS0zLjY2LDQuNzZaIi8+CiAgICAgICAgICAgIDxwYXRoIGNsYXNzPSJjbHMtMy1hYm91dCIgZD0ibTIzNC40MSwxMDYuMzFjMC0xLjA3LDAtMi4xNi0uMDItMy4yNGgxLjQ3Yy4wMy4zMy4wNywxLjU2LjA3LDIuNzcuNjgtMS45LDIuMjEtMy4xLDQuMTUtMy4wOXYxLjc2Yy0yLjM0LS4wMy00LjE1LDEuNzgtNC4xNSw1LjMydi01LjE1aC0xLjUyvC04LjY2WiIvPgogICAgICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTMtYWJvdXQiIGQ9Im0yNDYuMzcsOTcuMTRoMS41MnYyLjU5aC0xLjUyvC0yLjU5Wm0wLDUuOTNoMS41MnYxMS45aC0xLjUyvC0xMS45WiIvPgogICAgICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTMtYWJvdXQiIGQ9Im0yNjQuMDgsMTEyLjE1YzAsMS4wNC4wNiwyLjU1LjEsMi44M2gtMS40NWMtLjA4LS40OC0uMTItMS40NS0uMTItMS44Ni0uNTMsMS4yOS0xLjY3LDIuMTktMy44OCwyLjE5LTIuODksMC0zLjkyLTIuMDUtMy45Mi0zLjgsMC0zLjAyLDIuMzYtMy44Niw1LjIyLTMuODZoMi41N3YtLjcxYzAtMS40LS41MS0yLjc0LTIuODYtMi43NC0yLjEsMC0yLjYsMS4xMi0yLjgyLDIuMzNoLTEuNTJjLjEzLTEuNjEsMS4wNC0zLjc3LDQuMzUtMy43N3M0LjM0LDIuMDIsNC4zNCwzLjk4djUuNDJabS0xLjQ5LTMuMTVjLS4zNCwwLTEuMDEsMC0yLjUyLDAtMi41MiwwLTMuNzUuNjQtMy43NSwyLjQyLDAsMS4zMS44MSwyLjQxLDIuNjQsMi40MSwyLjk2LDAsMy42NC0yLjExLDMuNjQtNC4yMXYtLjYxWiIvPgogICAgICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTMtYWJvdXQiIGQ9Im0yODQuMDEsOTguMTN2MTYuODVoLTEuNjF2LTE2Ljg1aDEuNjFaIi8+CiAgICAgICAgICAgIDxwYXRoIGNsYXNzPSJjbHMtMy1hYm91dCIgZD0ibTI5MS43OSwxMDYuMTVjMC0xLjAyLDAtMi4wNC0uMDItMy4wN2gxLjQ4Yy4wNC40OS4wNiwxLjIxLjA1LDEuODkuNTEtMS4wNywxLjQ5LTIuMjIsMy4zMi0yLjIyLDEuNjMsMCwyLjY3Ljk1LDMuMTIsMi4zOC41NC0xLjA3LDEuNDktMi4zOCwzLjUtMi4zOHMzLjU3LDEuMzIsMy41Nyw0LjMydi03LjRoLTEuNTF2LTcuMzJjMC0xLjQ5LS40LTMuMzUtMi4zNS0zLjM1LTEuNzQsMC0yLjg5LDEuNDItMi44OSw0LjE2djYuNTFoLTEuNTF2LTcuNDRjMC0xLjUtLjQzLTMuMjMtMi4zNi0zLjIzLTIuMDgsMC0yLjg4LDEuOTUtMi44OCw0LjM4djYuM2gtMS41MXYtOC44M1oiLz4KICAgICAgICAgICAgPHBhdGggY2xhc3M9ImNscy0zLWFib3V0IiBkPSJtMzI0LjE5LDEwOS4wMmMwLDMuMi0xLjcyLDYuMjgtNS4zMiw2LjI4LTMuMzIsMC01LjIzLTIuOTgtNS4yMy02LjI2LDAtMy40NSwyLjAzLTYuMyw1LjMyLTYuM3M1LjIzLDMuMDgsNS4yMyw2LjI4Wm0tOC45OC4wMmMwLDIuMzgsMS4zMyw0LjcyLDMuNzIsNC43MnMzLjY5LTIuMTcsMy42OS00LjcxLTEuMzYtNC43Ny0zLjc1LTQuNzctMy42NiwyLjIxLTMuNjYsNC43NloiLz4KICAgICAgICAgICAgPHBhdGggY2xhc3M9ImNscy0zLWFib3V0IiBkPSJtMzMxLjA5LDk3LjE0aDEuNTJ2Ny45M2MuNTEtLjk4LDEuNjMtMi4zMywzLjg3LTIuMzMsMi44NSwwLDQuODUsMi42Myw0Ljg1LDYuMDgsMCwzLjk2LTIuMDYsNi40OC00Ljk0LDYuNDgtMi4yNCwwLTMuMjctMS4xOC0zLjgtMi4zMi0uMDIuNjYtLjAyLDEuNTMtLjA2LDEuOTloLTEuNDZjLjAyLTEuNDQuMDItMi43Ni4wMi00LjEzdi0xMy43Wm04LjY3LDExLjczYzAtMi4xMy0xLjA0LTQuNTYtMy41Ni00LjU2cy0zLjY3LDIuMDctMy42Nyw0LjY5YzAsMi45NSwxLjQ2LDQuNzIsMy42OCw0LjcyLDIuNTYsMCwzLjU1LTIuMzcsMy41NS00Ljg1WiIvPgogICAgICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTMtYWJvdXQiIGQ9Im0zNDguMTYsOTcuMTRoMS41MnYyLjU5aC0xLjUyvC0yLjU5Wm0wLDUuOTNoMS41MnYxMS45aC0xLjUyvC0xMS45WiIvPgogICAgICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTMtYWJvdXQiIGQ9Im0zNTcuNDMsMTE0Ljk4di0xNy44M2gxLjUyvDE3LjgzbC0xLjUyWiIvPgogICAgICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTMtYWJvdXQiIGQ9Im0zNjYuNjgsOTcuMTRoMS41MnYyLjU5aC0xLjUyvC0yLjU5Wm0wLDUuOTNoMS41MnYxMS45aC0xLjUyvC0xMS45WiIvPgogICAgICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTMtYWJvdXQiIGQ9Im0zODQuMzgsMTEyLjE1YzAsMS4wNC4wNiwyLjU1LjEsMi44M2gtMS40NWMtLjA4LS40OC0uMTItMS40NS0uMTItMS44Ni0uNTMsMS4yOS0xLjY3LDIuMTktMy44OCwyLjE5LTIuODksMC0zLjkyLTIuMDUtMy45Mi0zLjgsMC0zLjAyLDIuMzYtMy44Niw1LjIyLTMuODZoMi41N3YtLjcxYzAtMS40LS41MS0yLjc0LTIuODYtMi43NC0yLjEsMC0yLjYsMS4xMi0yLjgyLDIuMzNoLTEuNTJjLjEzLTEuNjEsMS4wNC0zLjc3LDQuMzUtMy43N3M0LjM0LDIuMDIsNC4zNCwzLjk4djUuNDJabS0xLjQ5LTMuMTVjLS4zNCwwLTEuMDEsMC0yLjUyLDAtMi41MiwwLTMuNzUuNjQtMy43NSwyLjQyLDAsMS4zMS44MSwyLjQxLDIuNjQsMi40MSwyLjk2LDAsMy42NC0yLjExLDMuNjQtNC4yMXYtLjYxWm0uNjctMTIuMWwtMy4xOCwzLjgyaC0xLjVsMi43OS0zLjgyaDEuODhaIi8+CiAgICAgICAgICAgIDxwYXRoIGNsYXNzPSJjbHMtMy1hYm91dCIgZD0ibTM5Mi4xNSwxMDYuMzFjMC0xLjA3LDAtMi4xNi0uMDItMy4yNGgxLjQ3Yy4wMy4zMy4wNywxLjU2LjA3LDIuNzcuNjgtMS45LDIuMjEtMy4xLDQuMTUtMy4wOXYxLjc2Yy0yLjM0LS4wMy00LjE1LDEuNzgtNC4xNSw1LjMydi01LjE1aC0xLjUyvC04LjY2WiIvPgogICAgICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTMtYWJvdXQiIGQ9Im00MDQuMTEsOTcuMTRoMS41MnYyLjU5aC0xLjUyvC0yLjU5Wm0wLDUuOTNoMS41MnYxMS45aC0xLjUyvC0xMS45WiIvPgogICAgICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTMtYWJvdXQiIGQ9Im00MjEuODIsMTEyLjE1YzAsMS4wNC4wNiwyLjU1LjEsMi44M2gtMS40NWMtLjA4LS40OC0uMTItMS40NS0uMTItMS44Ni0uNTMsMS4yOS0xLjY3LDIuMTktMy44OCwyLjE5LTIuODksMC0zLjkyLTIuMDUtMy45Mi0zLjgsMC0zLjAyLDIuMzYtMy44Niw1LjIyLTMuODZoMi41N3YtLjcxYzAtMS40LS41MS0yLjc0LTIuODYtMi43NC0yLjEsMC0yLjYsMS4xMi0yLjgyLDIuMzNoLTEuNTJjLjEzLTEuNjEsMS4wNC0zLjc3LDQuMzUtMy43N3M0LjM0LDIuMDIsNC4zNCwzLjk4djUuNDJabS0xLjQ5LTMuMTVjLS4zNCwwLTEuMDEsMC0yLjUyLDAtMi41MiwwLTMuNzUuNjQtMy43NSwyLjQyLDAsMS4zMS44MSwyLjQxLDIuNjQsMi40MSwyLjk2LDAsMy42NC0yLjExLDMuNjQtNC4yMXYtLjYxWiIvPgogICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgICAgICA8Zz4KICAgICAgICAgIDxwYXRoIGNsYXNzPSJjbHMtMS1hYm91dCIgZD0ibTUzMS40Nyw5OC42aDEzLjQ2YzEwLjQxLTI0LjQ1LDIwLjgyLTQ4LjksMzEuMjItNzMuMzVoLTExLjIzYy04LjAyLDQuMTctMTYuMDQsOC4zNC0yNC4wNiwxMi41MSwxLjQ4LDMuMDQsMi45Niw2LjA4LDQuNDQsOS4xMiwzLjUyLTEuOTIsNy4wNC0zLjg0LDEwLjU3LTUuNzYtOC4xNCwxOS4xNi0xNi4yNywzOC4zMi0yNC40MSw1Ny40OVoiLz4KICAgICAgICAgIDxnPgogICAgICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTEtYWJvdXQiIGQ9Im01NTUuMTIsOTYuMzRsLTEuMDUsMi4yNGgtMy4xMmw1LjU1LTEwLjc4aDMuOTJsMS4xMiwxMC43OGgtMy4wMWwtLjE5LTIuMjRoLTMuMjJabTMuMTktMi4yM2MtLjE0LTEuNjQtLjI0LTMuMTgtLjI3LTQuMThoLS4wNGMtLjQ4LDEuMTgtMS4xNiwyLjYyLTEuOTEsNC4xOGgyLjIyWiIvPgogICAgICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTEtYWJvdXQiIGQ9Im01NjIuMTcsOTguNThsMi4yOC0xMC43OGgzLjY4Yy41NCwyLjY2LDEuMyw1Ljg3LDEuNDYsNy4zNGguMDVjLjE2LTEuMjIuNTUtMy4yMy45Mi00Ljk1bC41LTIuMzhpMi43OGwtMi4yOCwxMC43OGgtMy41Yy0uNDYtMi4xOS0xLjM4LTYuMzItMS41Mi03LjcxLS4wNC0uMTgsMS4zMi0uNiwzLjMtMSw1LjJsLS41MywyLjUxaC0yLjc5WiIvPgogICAgICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTEtYWJvdXQiIGQ9Im01ODQuNTEsOTIuMTZjMCwzLjIzLTEuNzcsNi42MS02LjE4LDYuNjEtMy4xNSwwLTQuNS0yLjAxLTQuNS00LjQxLDAtMy4yNCwxLjk4LTYuNzcsNi4wOS02Ljc3LDMuMTgsMCw0LjYsMi4wNiw0LjYsNC41NlptLTcuNTgsMi4yNmMwLDEuMjkuNTIsMi4xNywxLjczLDIuMTcsMi4wNywwLDIuODEtMi44NSwyLjgxLTQuNjIsMC0xLjItLjQxLTIuMTktMS43LTIuMTktMS45NCwwLTIuODQsMi43OS0yLjg0LDQuNjRaIi8+CiAgICAgICAgICAgIDxwYXRoIGNsYXNzPSJjbHMtMS1hYm91dCIgZD0ibTU4Ny41Nyw5NS4yMWMuMDcuODcuNjIsMS40NywxLjc0LDEuNDcuODksMCwxLjQzLS4zMSwxLjQzLTEuMDksMC0uNjktLjQ5LTEuMDQtMS43Ny0xLjQ2LTIuMy0uNzUtMy4yMi0xLjY0LTMuMjItMy4wOCwwLTEuOTYsMS40NC0zLjQ2LDQuMzQtMy40NiwyLjYzLDAsNC4yNiwxLjIyLDQuMjksMy4zMWgtMi45NGMtLjAyLS40OS0uMjMtMS4yLTEuNDEtMS4yLS43MSwwLTEuMjMuMy0xLjIzLjk2LDAsLjUxLjM5LjgzLDEuNjYsMS4yNCwyLjQxLjc4LDMuNDEsMS43NCwzLjQxLDMuMzIsMCwyLjA1LTEuNSwzLjU1LTQuNzUsMy41NS0yLjk3LDAtNC40NC0xLjM5LTQuNS0zLjU3aDIuOTRaIi8+CiAgICAgICAgICA8L2c+CiAgICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTEtYWJvdXQiIGQ9Im01ODguMTMsMjUuNGgxNy41MWw1LjQ5LTEwLjAzaC0yOS41N3MtMTMsMzEuMzItMTMsMzEuMzJjMi43OC0yLjQ4LDYuNDQtNCwxMC40Ni00LDguNjcsMCwxNS43LDcuMDMsMTUuNywxNS43cy03LjAzLDE1LjctMTUuNywxNS43LTE4LjI0LTguODEtMTguMjQtOC44MWwtNC41NCwxMC41N3M3LjIsMTAuNTksMjIuNjksMTAuNTksMjguMDUtMTIuNTYsMjguMDUtMjguMDVjMC0xMi44LTguNTctMjMuNTktMjAuMjktMjYuOTYtLjAxLDAtLjUzLjkxLTEuMTIsMS45Ny0uOCwxLjQzLTEuNzMsMy4xMS0xLjczLDMuMTFsNC4yOS0xMS4xMloiLz4KICAgICAgICAgIDxnPgogICAgICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTItYWJvdXQiIGQ9Im01ODkuNzQsMzRsLS42MSwxLjRjMTIuNyw1LjU3LDE4LjU2LDIwLjYsMTMsMzMuMjktNS41NywxMi43LTIwLjYsMTguNTYtMzMuMjksMTNsLS42MSwxLjRjMTMuNDYsNS45LDI5LjQtLjMyLDM1LjMtMTMuNzgsNS45LTEzLjQ2LS4zMi0yOS40LTEzLjc4LTM1LjNaIi8+CiAgICAgICAgICAgIDxwYXRoIGNsYXNzPSJjbHMtMi1hYm91dCIgZD0ibTU4OC42LDM2LjZsLS41NiwxLjI3YzExLjM0LDQuOTcsMTYuNTgsMTguNCwxMS42MSwyOS43NC00Ljk3LDExLjM0LTE4LjQsMTYuNTgtMjkuNzQsMTEuNjFsLS41NiwxLjI3YzEyLjAzLDUuMjgsMjYuMjgtLjI4LDMxLjU2LTEyLjMyLDUuMjgtMTIuMDQtLjI4LTI2LjI4LTEyLjMyLTMxLjU2WiIvPgogICAgICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTItYWJvdXQiIGQ9Im01ODcuNSwzOS4xMWwtLjU2LDEuMjljOS45NSw0LjM2LDE0LjU1LDE2LjE0LDEwLjE5LDI2LjA5LTQuMzYsOS45NS0xNi4xNCwxNC41NS0yNi4wOSwxMC4xOWwtLjU2LDEuMjljMTAuNjYsNC42NywyMy4yNy0uMjUsMjcuOTQtMTAuOTEsNC42Ny0xMC42Ni0uMjUtMjMuMjctMTAuOTEtMjcuOTRaIi8+CiAgICAgICAgICAgIDxwYXRoIGNsYXNzPSJjbHMtMi1hYm91dCIgZD0ibTU4Ni40MSw0MS42MWwtLjU2LDEuMjljOC41OCwzLjc2LDEyLjU1LDEzLjkyLDguNzksMjIuNTFzLTEzLjkyLDEyLjU1LTIyLjUxLDguNzlsLS41NiwxLjI5YzkuMjksNC4wNywyMC4yOS0uMjIsMjQuMzYtOS41MSw0LjA3LTkuMjktLjIyLTIwLjI5LTkuNTEtMjQuMzZaIi8+CiAgICAgICAgICA8L2c+CiAgICAgICAgPC9nPgogICAgICA8L2c+CiAgICA8L2c+CiAgPC9nPgo8L3N2Zz4K';
-
-            return {
-                dataCadastro: document.getElementById('data-cadastro').value,
-                codigoImovel: document.getElementById('codigo-imovel').value,
-                corretorNome: document.getElementById('corretor-nome').value,
-                temFoto: document.getElementById('tem-foto').checked,
-                temPlaca: document.getElementById('tem-placa').checked,
-                propNome: document.getElementById('prop-nome').value,
-                propCpf: document.getElementById('prop-cpf').value,
-                propRg: document.getElementById('prop-rg').value,
-                propEstadoCivil: document.getElementById('prop-estado-civil').value,
-                propProfissao: document.getElementById('prop-profissao').value,
-                propTelefone: document.getElementById('prop-telefone').value,
-                propEmail: document.getElementById('prop-email').value,
-                propTelefoneWhatsapp: document.getElementById('prop-telefone-whatsapp').checked,
-                propEndereco: document.getElementById('prop-endereco').value,
-                imovelFinalidade: document.getElementById('imovel-finalidade').value,
-                imovelNumero: document.getElementById('imovel-numero').value,
-                imovelComplemento: document.getElementById('imovel-complemento').value,
-                imovelAndar: document.getElementById('imovel-andar').value,
-                imovelEdificio: document.getElementById('imovel-edificio').value,
-                imovelBairro: document.getElementById('imovel-bairro').value,
-                imovelCidade: document.getElementById('imovel-cidade').value,
-                imovelCep: document.getElementById('imovel-cep').value,
-                imovelEndereco: document.getElementById('imovel-endereco').value,
-                caracAreaUtil: document.getElementById('carac-area-util').value,
-                caracAreaTotal: document.getElementById('carac-area-total').value,
-                caracQuartos: document.getElementById('carac-quartos').value,
-                caracSuites: document.getElementById('carac-suites').value,
-                caracBanheiros: document.getElementById('carac-banheiros').value,
-                caracVagas: document.getElementById('carac-vagas').value,
-                caracMobiliado: document.getElementById('carac-mobiliado').value,
-                caracSol: document.getElementById('carac-sol').value,
-                terrenoAclive: document.getElementById('terreno-aclive').checked,
-                terrenoDeclive: document.getElementById('terreno-declive').checked,
-                localChaves: document.querySelector('input[name="local-chaves"]:checked')?.value || '',
-                localChavesOutro: document.getElementById('local-chaves-outro').value,
-                caracInfra: infraSelecionadas,
-                caracCondominio: infraCondoSelecionadas,
-                caracObs: document.getElementById('carac-obs').value,
-                valorVenda: document.getElementById('valor-venda').value,
-                valorLocacao: document.getElementById('valor-locacao').value,
-                valorAluguelComercial: document.getElementById('valor-aluguel-comercial').value,
-                valorCondominio: document.getElementById('valor-condominio').value,
-                valorIptu: document.getElementById('valor-iptu').value,
-                taxaLixo: document.getElementById('taxa-lixo').value,
-                taxaInicial: document.getElementById('taxa-inicial').value,
-                taxaMensal: document.getElementById('taxa-mensal').value,
-                documentacao: document.getElementById('documentacao').value,
-                permuta: document.getElementById('permuta').value,
-                valorComissao: document.getElementById('valor-comissao').value,
-                valorExclusividade: document.getElementById('valor-exclusividade').value,
-                imovelTipologia: tipologiasSelecionadas,
-                logoPersonal: logoPersonal
-            };
-        }
-
-        // Salva os dados da captação no Firestore
-        async function saveCaptureData() {
-            if (!currentUser) {
-                showAlert('Você não está logado. Não é possível salvar.', 'Erro de Autenticação');
-                return false;
-            }
-            const data = getFormData();
-            data.owner_email = currentUser.email;
-
-            const btnNext = document.getElementById('btn-next');
-            btnNext.disabled = true;
-
-            try {
-                if (currentEditingId) {
-                    // Atualiza um documento existente
-                    data.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
-                    await db.collection('captacoes').doc(currentEditingId).update(data);
-                    logActivity('CAPTURE_UPDATED', { captureId: currentEditingId });
-                    showAlert('Dados da captação atualizados com sucesso!', 'Sucesso');
-                } else {
-                    // Cria um novo documento
-                    data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-                    await db.collection('captacoes').add(data);
-                    logActivity('CAPTURE_CREATED', { propNome: data.propNome });
-                    showAlert('Dados da captação salvos com sucesso no banco de dados!', 'Sucesso');
-                }
-                writes++;
-                updateCounters();
-                updateLastSeen();
-                return true;
-            } catch (error) {
-                console.error("Erro ao salvar no Firestore: ", error);
-                if (currentEditingId) {
-                    showAlert('Falha ao atualizar os dados. Verifique sua conexão e tente novamente.', 'Erro no Banco de Dados');
-                } else {
-                    showAlert('Falha ao salvar os dados. Verifique sua conexão e tente novamente.', 'Erro no Banco de Dados');
-                }
-                return false;
-            } finally {
-                btnNext.disabled = false;
-            }
-        }
-
         // Carrega os recados administrativos
         async function loadAdminNotices() {
             const noticesDisplay = document.getElementById('admin-notices-display');
             if (noticesListener) return; // Listener já está ativo
 
+            // 1. Fetch all users to check for birthdays
+            let birthdayHtml = '';
+            try {
+                const usersSnapshot = await db.collection('users').get();
+                reads++; // Count this read
+                const hoje = new Date();
+                usersSnapshot.forEach(doc => {
+                    const user = doc.data();
+                    if (user.dataNascimento) {
+                        const aniversario = new Date(user.dataNascimento + 'T00:00:00');
+                        if (hoje.getDate() === aniversario.getDate() && hoje.getMonth() === aniversario.getMonth()) {
+                            const userName = `${user.nome || ''} ${user.sobrenome || ''}`.trim();
+                            birthdayHtml += `
+                                <div class="border-l-4 border-pink-400 pl-3 mb-3">
+                                    <p class="text-pink-800 font-semibold">🎂 Feliz Aniversário, ${userName}!</p>
+                                    <p class="text-xs text-pink-600 mt-1">A equipe deseja um dia incrível para você!</p>
+                                </div>
+                            `;
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error("Error fetching users for birthday check:", e);
+            }
+
+            // 2. Set up listener for regular notices
             const query = db.collection('avisos').orderBy('createdAt', 'desc').limit(5);
             
             noticesListener = query.onSnapshot(snapshot => {
                 reads++;
                 updateCounters();
 
-                if (snapshot.empty) {
-                    noticesDisplay.innerHTML = '<p class="text-blue-600">Nenhum recado da administração no momento.</p>';
-                    return;
-                }
-
-                noticesDisplay.innerHTML = ''; // Limpa a lista para redesenhar
                 let noticesHtml = '';
                 snapshot.forEach(doc => {
                     const notice = doc.data();
                     const date = new Date(notice.createdAt.seconds * 1000).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
                     noticesHtml += `
-                        <div class="border-l-4 border-blue-300 pl-3">
+                        <div class="border-l-4 border-blue-300 pl-3 mb-3">
                             <p class="text-blue-800">${notice.text}</p>
                             <p class="text-xs text-blue-500 mt-1">Publicado em: ${date}</p>
                         </div>
                     `;
                 });
-                noticesDisplay.innerHTML = noticesHtml;
+
+                // Combine birthday and regular notices
+                if (snapshot.empty && !birthdayHtml) {
+                    noticesDisplay.innerHTML = '<p class="text-blue-600">Nenhum recado da administração no momento.</p>';
+                } else {
+                    noticesDisplay.innerHTML = birthdayHtml + noticesHtml;
+                }
+
             }, error => {
                 console.error("Erro no listener de avisos:", error);
                 noticesDisplay.innerHTML = '<p class="text-red-500">Erro ao carregar recados.</p>';
                 noticesListener = null;
             });
+        }
+
+        // Log de atividades
+        async function logActivity(action, details = {}) {
+            if (!currentUser) return; // No change needed here
+            try {
+                await db.collection('audit_logs').add({
+                    action: action,
+                    userEmail: currentUser.email,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    details: details
+                });
+            } catch (error) { console.error('Error writing to audit log:', error); }
+        }
+
+        // Atualiza "visto por último"
+        async function updateLastSeen() {
+            if (!currentUser) return; // No change needed here
+            try {
+                const userRef = db.collection('users').doc(currentUser.uid);
+                await userRef.set({ last_seen: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+            } catch (error) { console.error('Error updating last seen:', error); }
         }
 
         // Funções do Modal de Feedback
@@ -1411,7 +1766,6 @@
             } finally {
                 btn.disabled = false;
                 btn.innerText = 'Enviar Mensagem';
-                hideGlobalSpinner();
             }
         }
         
@@ -1426,48 +1780,58 @@
                 updateCounters();
 
                 if (!doc.exists || !doc.data().setup_completed) {
-                    window.location.href = 'setup.html';
+                    window.location.href = 'setup.html'; 
                     return;
                 }
 
                 userData = doc.data();
+                if (userData.isActive === false) {
+                    throw new Error('Usuário desativado.');
+                }
                 if (userData && userData.nome) {
                     userName = `${userData.nome} ${userData.sobrenome || ''}`.trim();
                 }
 
+                initializeApp(user, userName, userData);
+
             } catch (error) {
                 console.error("Erro ao buscar detalhes do usuário:", error);
+                if (error.message === 'Usuário desativado.') {
+                    showAlert('Sua conta foi desativada. Entre em contato com o administrador.', 'Conta Desativada', () => auth.signOut());
+                } else {
+                    showAlert('Ocorreu um erro ao carregar seu perfil. Por favor, tente novamente mais tarde.', 'Erro de Perfil', () => auth.signOut());
+                }
             }
-            initializeApp(user, userName, userData); // Pass userName and userData to initializeApp
         }
 
-        // Log de atividades
-        async function logActivity(action, details = {}) {
-            if (!currentUser) return; // No change needed here
-            try {
-                await db.collection('audit_logs').add({
-                    action: action,
-                    userEmail: currentUser.email,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                    details: details
-                });
-            } catch (error) { console.error('Error writing to audit log:', error); }
-        }
+        function goToHistoryAndSearchById(captureId) {
+            // Set the search input in the history view
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) {
+                searchInput.value = captureId;
+            }
 
-        // Atualiza "visto por último"
-        async function updateLastSeen() {
-            if (!currentUser) return; // No change needed here
-            try {
-                const userRef = db.collection('users').doc(currentUser.uid);
-                await userRef.set({ last_seen: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
-            } catch (error) { console.error('Error updating last seen:', error); }
+            // Reset other filters to ensure only the ID search is active
+            const sortBy = document.getElementById('sort-by');
+            if (sortBy) sortBy.value = 'createdAt_desc';
+            const dateStart = document.getElementById('filter-date-start');
+            if (dateStart) dateStart.value = '';
+            const dateEnd = document.getElementById('filter-date-end');
+            if (dateEnd) dateEnd.value = '';
+            const signatureFilter = document.getElementById('filter-signature');
+            if (signatureFilter) signatureFilter.value = 'all';
+            const advancedFiltersForm = document.getElementById('advanced-filters-form');
+            if (advancedFiltersForm) advancedFiltersForm.reset();
+
+            // Switch to the history view, which will trigger the search
+            showView('history-view');
         }
 
         // Carrega as 3 captações mais recentes
         function loadRecentCaptures() {
             if (!currentUser) return;
             const display = document.getElementById('recent-captures-display');
-            if (recentCapturesListener) return; // Listener já ativo
+            if (recentCapturesListener) recentCapturesListener(); // Unsubscribe previous listener if active
 
             const query = db.collection('captacoes')
                 .where('owner_uid', '==', currentUser.uid)
@@ -1475,7 +1839,7 @@
                 .limit(3);
             
             recentCapturesListener = query.onSnapshot(snapshot => {
-                reads++;
+                reads += snapshot.size; // Count reads for each document
                 updateCounters();
 
                 if (snapshot.empty) {
@@ -1491,32 +1855,37 @@
                     const date = new Date(data.createdAt.seconds * 1000).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
                     const tipologia = data.imovelTipologia && data.imovelTipologia.length > 0 ? data.imovelTipologia.join(' / ') : 'Imóvel';
                     const codigoHtml = data.codigoImovel ? ` | Cód: <span class="font-semibold">${data.codigoImovel}</span>` : '';
+                    const tipoCaptacao = (data.tipoCaptacao === 'Ambos' || data.tipoCaptacao === 'Venda e Aluguel') ? 'Venda e Aluguel' : data.tipoCaptacao || 'N/D';
                     html += `
-                        <div class="bg-white p-3 rounded-xl shadow-sm border flex flex-wrap justify-between items-center gap-x-4 gap-y-2 group hover:border-orange-200 transition-all">
-                            <div class="flex-grow min-w-0">
-                                <div class="flex items-center gap-3 mb-1">
+                <div onclick="goToHistoryAndSearchById('${doc.id}')" style="cursor: pointer;" class="bg-white p-4 rounded-xl shadow-sm border group hover:border-orange-300 hover:ring-2 hover:ring-orange-200 transition-all">
+                    <div class="flex justify-between items-start gap-3">
+                        <div class="flex-grow min-w-0">
                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                                        ${(data.tipoCaptacao === 'Ambos' || data.tipoCaptacao === 'Venda e Aluguel') ? 'Venda e Aluguel' : data.tipoCaptacao || 'N/D'}
+                                ${tipoCaptacao}
                                     </span>
-                                    <p class="font-bold text-gray-800 truncate" title="${tipologia} - ${data.imovelBairro || 'Bairro'}, ${data.imovelNumero || 'S/N'}">${tipologia} - ${data.imovelBairro || 'Bairro'}, ${data.imovelNumero || 'S/N'}</p>
+                            <h4 class="font-bold text-gray-800 truncate mt-2" title="${tipologia} - ${data.imovelBairro || 'Bairro'}">${tipologia} - ${data.imovelBairro || 'Bairro não informado'}</h4>
+                            <p class="text-sm text-gray-600 truncate" title="${data.propNome || 'Não informado'}">Prop.: ${data.propNome || 'Não informado'}</p>
                                 </div>
-                                <div>
-                                    <p class="text-sm text-gray-600 truncate">Proprietário: <span class="font-medium">${data.propNome || 'Não informado'}</span></p>
-                                    <p class="text-xs text-gray-400 mt-0.5">ID: ${doc.id.substring(0, 6).toUpperCase()}${codigoHtml} | Em: ${date}</p>
+                        <div class="text-right shrink-0 flex flex-col items-end">
+                            <div class="mb-2">
+                                ${(() => {
+                                    const isSigned = data.signatureId && data.signatureStatus === 'signed';
+                                    let signatureBadgeHtml;
+                                    if (isSigned) {
+                                        signatureBadgeHtml = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"><svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg> Assinado</span>`;
+                                    } else if (data.signatureStatus === 'pending') {
+                                        signatureBadgeHtml = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"><svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clip-rule="evenodd" /></svg> Pendente</span>`;
+                                    } else {
+                                        signatureBadgeHtml = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"><svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg> Não Assinado</span>`;
+                                    }
+                                    return signatureBadgeHtml;
+                                })()}
+                            </div>
+                            <p class="text-xs text-gray-500 font-medium">${date}</p>
+                            <p class="text-xs text-gray-400 mt-1 font-mono">ID: ${doc.id.substring(0, 6).toUpperCase()}</p>
+                            ${data.codigoImovel ? `<p class="text-xs text-gray-400 mt-0.5 font-mono">Cód: ${data.codigoImovel}</p>` : ''}
                                 </div>
                             </div>
-                            <div class="flex items-center gap-2 shrink-0">
-                                ${currentUser && currentUser.email === adminEmail ? `
-                                    <button onclick="editCapture('${doc.id}')" class="px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-200 flex items-center justify-center gap-1.5" title="Editar">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
-                                        <span>Editar</span>
-                                    </button>
-                                ` : ''}
-                                <button onclick='generatePDFFromHistory(this, ${JSON.stringify(data)})' class="px-3 py-1.5 bg-orange-500 text-white text-xs font-semibold rounded-lg hover:bg-orange-600 flex items-center justify-center gap-1.5" title="Gerar PDF">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>
-                                    <span>PDF</span>
-                                </button>
-                            </div>                            
                         </div>
                     `;
                 });
@@ -1528,9 +1897,23 @@
             });
         }
 
-        // Redirects to the form page for editing a capture
         function editCapture(id) {
+            logActivity('CAPTURE_EDIT_ATTEMPT', { captureId: id });
             window.location.href = `form.html?edit=${id}`;
+        }
+
+        function handleEditClick(captureId, isSigned) {
+            if (isSigned) {
+                showConfirm(
+                    'Esta captação já foi assinada. Ao editar, a assinatura atual será invalidada e uma nova coleta será necessária. Deseja continuar?',
+                    'Atenção: Captação Assinada',
+                    () => {
+                        editCapture(captureId);
+                    }
+                );
+            } else {
+                editCapture(captureId);
+            }
         }
 
         // Carrega o histórico de captações
@@ -1578,44 +1961,65 @@
             }
         }
 
-        function renderHistory(items) {
+        function renderCurrentPage() {
             const historyList = document.getElementById('history-list');
             const noDataEl = document.getElementById('history-no-data');
             const loadingEl = document.getElementById('history-loading');
-            const loadMoreContainer = document.getElementById('load-more-container');
+            const paginationContainer = document.getElementById('pagination-container');
+            const pageInfoEl = document.getElementById('page-info');
+            const prevBtn = document.getElementById('btn-prev-page');
+            const nextBtn = document.getElementById('btn-next-page');
 
             if (loadingEl) loadingEl.style.display = 'none';
             historyList.innerHTML = '';
 
-            if (items.length === 0) {
+            if (currentFilteredItems.length === 0) {
                 noDataEl.classList.remove('hidden');
                 historyList.classList.add('hidden');
+                paginationContainer.classList.add('hidden');
             } else {
                 noDataEl.classList.add('hidden');
                 historyList.classList.remove('hidden');
-                if (loadMoreContainer) loadMoreContainer.classList.add('hidden'); // Hide load more button for filtered results
-                noDataEl.classList.add('hidden');
-                items.forEach(item => {
+                paginationContainer.classList.remove('hidden');
+
+                const totalPages = Math.ceil(currentFilteredItems.length / pageSize);
+                const startIndex = (currentPage - 1) * pageSize;
+                const endIndex = startIndex + pageSize;
+                const pageItems = currentFilteredItems.slice(startIndex, endIndex);
+
+                pageItems.forEach(item => {
                     const itemHtml = createHistoryItemHtml(item);
                     historyList.insertAdjacentHTML('beforeend', itemHtml);
                 });
+
+                pageInfoEl.innerText = `Página ${currentPage} de ${totalPages}`;
+                prevBtn.disabled = currentPage === 1;
+                nextBtn.disabled = currentPage === totalPages;
             }
         }
 
         function applyFiltersAndSearch() {
             showGlobalSpinner(); //
             const searchTerm = document.getElementById('search-input').value.toLowerCase();
-            const filterDate = document.getElementById('filter-date').value;
+            const filterDateStart = document.getElementById('filter-date-start').value;
+            const filterDateEnd = document.getElementById('filter-date-end').value;
             const sortBy = document.getElementById('sort-by').value; // New sort option
+            const signatureStatus = document.getElementById('filter-signature').value;
             
             let filteredData = historyCache;
 
-            // Apply date filter
-            if (filterDate) {
+            // Apply date range filter
+            if (filterDateStart || filterDateEnd) {
+                const startDate = filterDateStart ? new Date(filterDateStart + 'T00:00:00') : null;
+                const endDate = filterDateEnd ? new Date(filterDateEnd + 'T23:59:59') : null;
+
                 filteredData = filteredData.filter(item => {
-                    if (!item.createdAt) return false;
-                    const itemDate = new Date(item.createdAt.seconds * 1000).toISOString().split('T')[0];
-                    return itemDate === filterDate;
+                    if (!item.createdAt || !item.createdAt.seconds) return false;
+                    const itemDate = new Date(item.createdAt.seconds * 1000);
+                    
+                    if (startDate && itemDate < startDate) return false;
+                    if (endDate && itemDate > endDate) return false;
+                    return true;
                 });
             }
 
@@ -1640,6 +2044,16 @@
                 });
             }
             
+            // Apply signature status filter
+            if (signatureStatus !== 'all') {
+                filteredData = filteredData.filter(item => {
+                    const isSigned = item.signatureStatus === 'signed';
+                    if (signatureStatus === 'signed') return isSigned;
+                    if (signatureStatus === 'not_signed') return !isSigned;
+                    return true;
+                });
+            }
+
             // Apply advanced filters from modal
             const advancedFiltersForm = document.getElementById('advanced-filters-form');
             if (advancedFiltersForm) {
@@ -1686,26 +2100,44 @@
                 return 0;
             });
             
-            renderHistory(filteredData);
-            hideGlobalSpinner(); //
+            currentFilteredItems = filteredData;
+            currentPage = 1; // Reseta para a primeira página a cada nova busca
+            renderCurrentPage();
+            hideGlobalSpinner();
         }
         
-        // Wrapper para gerar PDF a partir do botão do histórico
-        function generatePDFFromHistory(button, data) {
-            generatePDF(data, button).then(() => logActivity('PDF_GENERATED_FROM_HISTORY', { captureId: data.id }));
-            showGlobalSpinner(); //
-        }
-
         function createHistoryItemHtml(data) {
             const date = data.createdAt ? new Date(data.createdAt.seconds * 1000).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'Data Indisponível';
             const tipoCaptacao = (data.tipoCaptacao === 'Ambos' || data.tipoCaptacao === 'Venda e Aluguel') ? 'Venda e Aluguel' : data.tipoCaptacao || 'N/D';
             const tipologia = (data.imovelTipologia && data.imovelTipologia.length > 0 ? data.imovelTipologia.join(' / ') : 'Imóvel');
             const codigoImovelBadge = data.codigoImovel ? `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Cód: ${data.codigoImovel}</span>` : '';
+            const isSigned = data.signatureId && data.signatureStatus === 'signed';
+
+            let signatureBadge;
+            if (isSigned) {
+                signatureBadge = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+                    Assinado
+                </span>`;
+            } else if (data.signatureStatus === 'pending') {
+                signatureBadge = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clip-rule="evenodd" /></svg>
+                    Pendente
+                </span>`;
+            } else {
+                signatureBadge = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
+                    Não Assinado
+                </span>`;
+            }
 
             return `
-                <div id="history-item-${data.id}" class="bg-white p-4 rounded-xl shadow-sm border space-y-4">
+                <div id="history-item-${data.id}" class="relative bg-white p-4 rounded-xl shadow-sm border space-y-4">
+                    <div class="absolute top-4 right-4 z-10">
+                        <button type="button" onclick="showSignatureStatus('${data.id}')" class="focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 rounded-full" title="Ver status da assinatura">${signatureBadge}</button>
+                    </div>
                     <!-- Header: Tipo, Tipologia e Endereço -->
-                    <div>
+                    <div class="pr-28 sm:pr-32">
                         <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2">
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-800">
                                 ${tipoCaptacao}
@@ -1732,21 +2164,24 @@
                             </div>
                             <div class="flex items-center gap-2">
                                 <span class="font-medium">ID:</span>
-                                <span class="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-xs">${data.id.substring(0, 6).toUpperCase()}</span>
+                                <span onclick="copyToClipboard('${data.id}', 'ID da Captação copiado!')" title="Clique para copiar o ID: ${data.id}" class="cursor-pointer font-mono bg-gray-100 px-1.5 py-0.5 rounded text-xs hover:bg-gray-200 transition-colors">${data.id.substring(0, 6).toUpperCase()}</span>
                                 ${codigoImovelBadge}
                             </div>
                         </div>
                     </div>
-        
                     <!-- Actions: Buttons -->
                     <div class="pt-4 border-t border-gray-200 flex flex-col sm:flex-row gap-2">
-                        <button onclick="editCapture('${data.id}')" class="w-full sm:w-auto flex-1 px-4 py-2 bg-blue-500 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 flex items-center justify-center gap-2">
+                        <button onclick="handleEditClick('${data.id}', ${isSigned})" class="w-full sm:w-auto flex-1 px-4 py-2 bg-blue-500 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 flex items-center justify-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
                             <span>Editar</span>
                         </button>
                         <button onclick='generatePDFFromHistory(this, ${JSON.stringify(data)})' class="w-full sm:w-auto flex-1 px-4 py-2 bg-orange-500 text-white text-sm font-semibold rounded-lg hover:bg-orange-600 flex items-center justify-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>
                             <span>Gerar PDF</span>
+                        </button>
+                        <button onclick="handleSignatureRequest('${data.id}', ${isSigned})" class="w-full sm:w-auto flex-1 px-4 py-2 bg-purple-600 text-white text-sm font-semibold rounded-lg hover:bg-purple-700 flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L14.732 3.732z" /></svg>
+                            <span>${isSigned ? 'Solicitar Nova Assinatura' : 'Coletar Assinatura'}</span>
                         </button>
                     </div>
                 </div>
@@ -1780,104 +2215,61 @@
                 document.getElementById('admin-button').classList.remove('hidden');
                 const counterWrapper = document.getElementById('firebase-counter-wrapper');
                 if (counterWrapper) {
-                    // counterWrapper.classList.remove('hidden'); // Already handled in admin.html
                     counterWrapper.classList.remove('hidden');
                     counterWrapper.classList.add('flex');
                 }
             }
-            updateCounters(); // Exibe o contador persistido ao iniciar
-            // Inicia o relógio
-
-            // Inicia o relógio e as saudações
+            updateCounters();
             updateDateTime();
-            setInterval(updateDateTime, 1000); // Atualiza a cada segundo
+            setInterval(updateDateTime, 1000);
             fetchGlobalConfig();
-            setGreetingMessage(userName, userData); // Pass userName and userData
+            setGreetingMessage(userName, userData);
             loadRecentCaptures();
             loadAdminNotices();
-
-            showView('dashboard-view'); //
-            resetInactivityTimer(); //
-
-            // Search and Filter Listeners
+            showView('dashboard-view');
+            resetInactivityTimer();
             document.getElementById('btn-apply-search').addEventListener('click', applyFiltersAndSearch);
             document.getElementById('btn-clear-search').addEventListener('click', () => {
                 document.getElementById('search-input').value = '';
-                document.getElementById('search-criteria').value = 'all';
+                document.getElementById('sort-by').value = 'createdAt_desc';
+                document.getElementById('filter-date-start').value = '';
+                document.getElementById('filter-date-end').value = '';
+                document.getElementById('filter-signature').value = 'all';
+                // Limpa o formulário de filtros avançados e aplica a busca com os campos limpos
+                document.getElementById('advanced-filters-form').reset();
                 applyFiltersAndSearch();
             });
-            document.getElementById('search-input').addEventListener('keyup', (event) => {
-                if (event.key === 'Enter') applyFiltersAndSearch();
-            });
-            document.getElementById('filter-date').addEventListener('change', applyFiltersAndSearch); //
-            document.getElementById('btn-clear-date-filter').addEventListener('click', () => {
-                document.getElementById('filter-date').value = '';
-                document.getElementById('btn-clear-date-filter').classList.add('hidden');
-                applyFiltersAndSearch(); //
-            });
-            document.getElementById('sort-by').addEventListener('change', applyFiltersAndSearch); // New sort listener
-            document.getElementById('btn-open-advanced-filters').addEventListener('click', openAdvancedFilterModal); //
-
+            document.getElementById('search-input').addEventListener('keyup', (event) => { if (event.key === 'Enter') applyFiltersAndSearch(); });
+            document.getElementById('filter-date-start').addEventListener('change', applyFiltersAndSearch);
+            document.getElementById('filter-date-end').addEventListener('change', applyFiltersAndSearch);
+            document.getElementById('sort-by').addEventListener('change', applyFiltersAndSearch);
+            document.getElementById('filter-signature').addEventListener('change', applyFiltersAndSearch);
+            document.getElementById('btn-open-advanced-filters').addEventListener('click', openAdvancedFilterModal);
             document.getElementById('btn-refresh-db').addEventListener('click', () => {
-                historyCache = []; // Clear cache
+                historyCache = [];
                 fetchAllHistory();
             });
-
-            document.getElementById('btn-load-more').addEventListener('click', () => {
-                currentPage++;
-                renderHistoryPage();
-            });
-            
-            // Initial call to hide spinner
-            hideGlobalSpinner(); //
-
-            // ... (rest of the function)
-            
-            ['click', 'keypress', 'mousemove', 'scroll'].forEach(event => {
-                window.addEventListener(event, resetInactivityTimer);
-            });
-
-            // Adiciona listeners para o modal de confirmação
+            hideGlobalSpinner();
+            ['click', 'keypress', 'mousemove', 'scroll'].forEach(event => window.addEventListener(event, resetInactivityTimer));
             document.getElementById('confirm-btn-yes').addEventListener('click', () => closeConfirm(true));
             document.getElementById('confirm-btn-no').addEventListener('click', () => closeConfirm(false));
-            document.getElementById('about-modal-btn').addEventListener('click', openAboutModal); //
-
-            // Novo listener para o botão de toggle dos filtros
+            document.getElementById('about-modal-btn').addEventListener('click', openAboutModal);
             document.getElementById('btn-toggle-filters').addEventListener('click', () => {
                 const filtersContainer = document.getElementById('filters-container');
                 const buttonText = document.getElementById('btn-toggle-filters-text');
                 filtersContainer.classList.toggle('hidden');
-                if (filtersContainer.classList.contains('hidden')) {
-                    buttonText.innerText = 'Mostrar Filtros';
-                } else {
-                    buttonText.innerText = 'Ocultar Filtros';
-                }
+                buttonText.innerText = filtersContainer.classList.contains('hidden') ? 'Mostrar Filtros' : 'Ocultar Filtros';
             });
         }
-
-        function showGlobalSpinner() { //
+        
+        function showGlobalSpinner() {
             document.getElementById('global-loading-spinner').classList.remove('hidden');
+            document.getElementById('global-loading-spinner').classList.add('flex');
         }
 
-        function hideGlobalSpinner() { //
+        function hideGlobalSpinner() {
             document.getElementById('global-loading-spinner').classList.add('hidden');
-        }
-
-        // Advanced Filter Modal Functions
-        function openAdvancedFilterModal() { // No change needed here
-            document.getElementById('advanced-filters-modal').classList.remove('hidden');
-        }
-        function closeAdvancedFilterModal() { // No change needed here
-            document.getElementById('advanced-filters-modal').classList.add('hidden');
-        }
-        function applyAdvancedFilters() { // No change needed here
-            applyFiltersAndSearch();
-            closeAdvancedFilterModal();
-        }
-        function clearAdvancedFilters() { // No change needed here
-            document.getElementById('advanced-filters-form').reset();
-            applyFiltersAndSearch();
-            closeAdvancedFilterModal();
+            document.getElementById('global-loading-spinner').classList.remove('flex');
         }
     </script>
 </body>
