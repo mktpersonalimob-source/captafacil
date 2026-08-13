@@ -1327,66 +1327,54 @@
             await generatePDF(captureData, button, signatureData);
         }
 
-        async function showSignatureStatus(captureId, signatureId) {
+        async function showSignatureStatus(captureId) {
             const modal = document.getElementById('signature-status-modal');
             const content = document.getElementById('signature-status-content');
             
             modal.classList.remove('hidden');
             content.innerHTML = '<p class="animate-pulse">Carregando dados da assinatura...</p>';
 
-            if (!signatureId || signatureId === 'undefined' || signatureId === 'null') {
-                // Verifica o documento de captação para o status pendente
-                try {
-                    const captureDoc = await db.collection('captacoes').doc(captureId).get();
-                    reads++;
-                    updateCounters();
-                    if (captureDoc.exists && captureDoc.data().signatureStatus === 'pending') {
-                         const expiryDate = captureDoc.data().signatureTokenExpires ? new Date(captureDoc.data().signatureTokenExpires.seconds * 1000).toLocaleString('pt-BR') : 'N/A';
-                         content.innerHTML = `<p>Um link de assinatura foi gerado e está aguardando o proprietário assinar.</p><p class="text-sm text-gray-500 mt-2">O link expira em: ${expiryDate}</p>`;
-                    } else {
-                         content.innerHTML = '<p>Esta captação ainda não possui uma assinatura digital solicitada ou vinculada.</p>';
-                    }
-                } catch (e) {
-                     content.innerHTML = '<p>Esta captação ainda não possui uma assinatura digital vinculada.</p>';
-                }
-                return;
-            }
-
             try {
-                const sigDoc = await db.collection('assinaturas').doc(signatureId).get();
+                const captureDoc = await db.collection('captacoes').doc(captureId).get();
                 reads++;
                 updateCounters();
 
-                if (!sigDoc.exists) {
-                    content.innerHTML = `<p class="text-red-500">Erro: A assinatura vinculada (ID: ${signatureId}) não foi encontrada no banco de dados.</p>`;
+                if (!captureDoc.exists) {
+                    content.innerHTML = '<p class="text-red-500">Erro: Captação não encontrada.</p>';
                     return;
                 }
 
-                const sigData = sigDoc.data();
-                const signedDate = sigData.signedAt ? new Date(sigData.signedAt.seconds * 1000).toLocaleString('pt-BR') : 'Data não registrada';
+                const captureData = captureDoc.data();
+                const status = captureData.signatureStatus;
+                const currentSignatureId = captureData.signatureId;
 
-                let deviceInfoHtml = '';
-                if (sigData.deviceInfo && sigData.deviceInfo.userAgent) {
-                    deviceInfoHtml = `
-                        <p class="mt-2 pt-2 border-t text-xs text-gray-500">
-                            <strong>Dispositivo:</strong> ${parseUserAgent(sigData.deviceInfo.userAgent)}
-                        </p>
-                    `;
+                if (status === 'signed' && currentSignatureId) {
+                    const sigDoc = await db.collection('assinaturas').doc(currentSignatureId).get();
+                    reads++;
+                    updateCounters();
+                    if (!sigDoc.exists) {
+                        content.innerHTML = `<p class="text-red-500">Erro: A assinatura vinculada (ID: ${currentSignatureId}) não foi encontrada.</p>`;
+                        return;
+                    }
+                    const sigData = sigDoc.data();
+                    const signedDate = sigData.signedAt ? new Date(sigData.signedAt.seconds * 1000).toLocaleString('pt-BR') : 'Data não registrada';
+                    let deviceInfoHtml = '';
+                    if (sigData.deviceInfo && sigData.deviceInfo.userAgent) {
+                        deviceInfoHtml = `<p class="mt-2 pt-2 border-t text-xs text-gray-500"><strong>Dispositivo:</strong> ${parseUserAgent(sigData.deviceInfo.userAgent)}</p>`;
+                    }
+                    content.innerHTML = `
+                        <p><strong>Proprietário:</strong> ${sigData.ownerName}</p>
+                        ${sigData.ownerCpf ? `<p><strong>CPF:</strong> ${sigData.ownerCpf}</p>` : ''}
+                        <p><strong>Data da Assinatura:</strong> ${signedDate}</p>
+                        <p><strong>Endereço IP:</strong> ${sigData.clientIp || 'Não registrado'}</p>
+                        ${deviceInfoHtml}
+                        <div class="mt-4 pt-4 border-t"><p class="font-semibold mb-2">Assinatura:</p><div class="bg-gray-100 border rounded-md p-2 flex justify-center"><img src="${sigData.signatureImage}" alt="Assinatura" class="h-20 object-contain"></div></div>`;
+                } else if (status === 'pending') {
+                    const expiryDate = captureData.signatureTokenExpires ? new Date(captureData.signatureTokenExpires.seconds * 1000).toLocaleString('pt-BR') : 'N/A';
+                    content.innerHTML = `<p>Um link de assinatura foi gerado e está aguardando o proprietário assinar.</p><p class="text-sm text-gray-500 mt-2">O link expira em: ${expiryDate}</p>`;
+                } else {
+                    content.innerHTML = '<p>Esta captação não possui uma assinatura digital válida no momento.</p>';
                 }
-
-                content.innerHTML = `
-                    <p><strong>Proprietário:</strong> ${sigData.ownerName}</p>
-                    ${sigData.ownerCpf ? `<p><strong>CPF:</strong> ${sigData.ownerCpf}</p>` : ''}
-                    <p><strong>Data da Assinatura:</strong> ${signedDate}</p>
-                    <p><strong>Endereço IP:</strong> ${sigData.clientIp || 'Não registrado'}</p>
-                    ${deviceInfoHtml}
-                    <div class="mt-4 pt-4 border-t">
-                        <p class="font-semibold mb-2">Assinatura:</p>
-                        <div class="bg-gray-100 border rounded-md p-2 flex justify-center">
-                            <img src="${sigData.signatureImage}" alt="Assinatura" class="h-20 object-contain">
-                        </div>
-                    </div>
-                `;
             } catch (error) {
                 console.error("Erro ao buscar status da assinatura:", error);
                 content.innerHTML = '<p class="text-red-500">Ocorreu um erro ao buscar os detalhes da assinatura.</p>';
@@ -1398,24 +1386,26 @@
                 showConfirm(
                     'Esta captação já possui uma assinatura. Gerar um novo link irá desvincular a assinatura atual e exigir uma nova coleta. Deseja continuar?',
                     'Atenção: Nova Assinatura',
-                    () => {
+                async () => {
                         // Logic to unlink old signature before generating new one
                         const captureRef = db.collection('captacoes').doc(captureId);
-                        captureRef.update({
+                    try {
+                        await captureRef.update({
                             signatureId: firebase.firestore.FieldValue.delete(),
                             signatureStatus: 'revoked'
-                        }).then(() => {
-                            logActivity('SIGNATURE_REVOKED', { captureId });
+                        });
+                        await logActivity('SIGNATURE_REVOKED', { captureId });
                             historyCache = []; // Invalida o cache para forçar a releitura
-                            generateSignatureLink(captureId); // Gera novo link, que irá recarregar o histórico
-                        }).catch(error => {
+                        await generateSignatureLink(captureId);
+                        fetchAllHistory(); // Força a atualização da lista
+                    } catch (error) {
                             console.error("Error revoking signature: ", error);
                             showAlert('Falha ao revogar a assinatura anterior.', 'Erro');
-                        });
+                    }
                     }
                 );
             } else {
-                generateSignatureLink(captureId);
+            generateSignatureLink(captureId).then(() => fetchAllHistory());
             }
         }
 
@@ -1912,6 +1902,20 @@
             window.location.href = `form.html?edit=${id}`;
         }
 
+        function handleEditClick(captureId, isSigned) {
+            if (isSigned) {
+                showConfirm(
+                    'Esta captação já foi assinada. Ao editar, a assinatura atual será invalidada e uma nova coleta será necessária. Deseja continuar?',
+                    'Atenção: Captação Assinada',
+                    () => {
+                        editCapture(captureId);
+                    }
+                );
+            } else {
+                editCapture(captureId);
+            }
+        }
+
         // Carrega o histórico de captações
         async function fetchAllHistory() {
             if (!currentUser) return;
@@ -2130,7 +2134,7 @@
             return `
                 <div id="history-item-${data.id}" class="relative bg-white p-4 rounded-xl shadow-sm border space-y-4">
                     <div class="absolute top-4 right-4 z-10">
-                        <button type="button" onclick="showSignatureStatus('${data.id}', '${data.signatureId}')" class="focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 rounded-full" title="Ver status da assinatura">${signatureBadge}</button>
+                        <button type="button" onclick="showSignatureStatus('${data.id}')" class="focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 rounded-full" title="Ver status da assinatura">${signatureBadge}</button>
                     </div>
                     <!-- Header: Tipo, Tipologia e Endereço -->
                     <div class="pr-28 sm:pr-32">
@@ -2167,7 +2171,7 @@
                     </div>
                     <!-- Actions: Buttons -->
                     <div class="pt-4 border-t border-gray-200 flex flex-col sm:flex-row gap-2">
-                        <button onclick="editCapture('${data.id}')" class="w-full sm:w-auto flex-1 px-4 py-2 bg-blue-500 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 flex items-center justify-center gap-2">
+                        <button onclick="handleEditClick('${data.id}', ${isSigned})" class="w-full sm:w-auto flex-1 px-4 py-2 bg-blue-500 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 flex items-center justify-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
                             <span>Editar</span>
                         </button>

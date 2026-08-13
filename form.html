@@ -1409,6 +1409,7 @@
                     data.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
                     docRef = db.collection('captacoes').doc(currentEditingId);
                     data.signatureStatus = 'updated'; // Reset signature status on update
+                    data.signatureId = firebase.firestore.FieldValue.delete(); // Remove the link to the old signature
                     await docRef.update(data);
                 } else {
                     data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
