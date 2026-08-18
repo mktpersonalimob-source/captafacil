@@ -51,8 +51,8 @@
         </header>
 
         <div class="bg-gray-50 p-4 rounded-lg border mb-6">
-            <h3 class="font-semibold text-gray-700 mb-2">Imóvel Referente:</h3>
-            <p id="property-address" class="text-sm text-gray-600">Carregando...</p>
+            <h3 class="font-semibold text-gray-700 mb-2">Confirme os dados da captação:</h3>
+            <div id="property-address" class="text-sm text-gray-600 leading-relaxed space-y-1">Carregando...</div>
         </div>
 
         <div class="space-y-4">
@@ -301,7 +301,34 @@
                 }
 
                 // Populate data and show form
-                document.getElementById('property-address').innerText = data.propertyAddress;
+                const propertyDetailsEl = document.getElementById('property-address');
+                let detailsHtml = `<p><span class="font-semibold text-gray-800">Endereço:</span> ${data.propertyAddress}</p>`;
+                
+                if (data.imovelComplemento) {
+                    detailsHtml += `<p><span class="font-semibold text-gray-800">Complemento:</span> ${data.imovelComplemento}</p>`;
+                }
+                if (data.imovelAndar) {
+                    detailsHtml += `<p><span class="font-semibold text-gray-800">Andar:</span> ${data.imovelAndar}</p>`;
+                }
+                if (data.codigoImovel) {
+                    detailsHtml += `<p><span class="font-semibold text-gray-800">Código do Imóvel:</span> ${data.codigoImovel}</p>`;
+                }
+
+                // Adiciona uma linha separadora antes dos valores
+                detailsHtml += `<div class="border-t border-gray-200 my-2"></div>`;
+
+                if ((data.tipoCaptacao === 'Venda' || data.tipoCaptacao === 'Ambos') && data.valorVenda && data.valorVenda !== 'R$ 0,00') {
+                    detailsHtml += `<p><span class="font-semibold text-gray-800">Valor de Venda:</span> ${data.valorVenda}</p>`;
+                }
+                if ((data.tipoCaptacao === 'Aluguel' || data.tipoCaptacao === 'Ambos') && data.valorLocacao && data.valorLocacao !== 'R$ 0,00') {
+                    detailsHtml += `<p><span class="font-semibold text-gray-800">Valor Aluguel Residencial:</span> ${data.valorLocacao}</p>`;
+                }
+                if ((data.tipoCaptacao === 'Aluguel' || data.tipoCaptacao === 'Ambos') && data.valorAluguelComercial && data.valorAluguelComercial !== 'R$ 0,00') {
+                    detailsHtml += `<p><span class="font-semibold text-gray-800">Valor Aluguel Comercial:</span> ${data.valorAluguelComercial}</p>`;
+                }
+
+                propertyDetailsEl.innerHTML = detailsHtml;
+
                 document.getElementById('owner-name').value = data.ownerName || '';
                 document.getElementById('owner-cpf').value = data.ownerCpf || '';
 

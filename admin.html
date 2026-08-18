@@ -431,10 +431,29 @@
                 </button>
             </header>
             <div class="max-w-md mx-auto">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                <h3 class="text-lg font-semibold text-gray-800">Download de Backup</h3>
-                <p class="text-gray-600 mb-6">Clique no botão abaixo para iniciar o download de um arquivo JSON contendo todos os dados das coleções: captações, avisos, feedback e usuários.</p>
-                <button id="btn-create-backup" onclick="createBackup()" class="px-6 py-3 bg-gray-700 text-white font-semibold rounded-lg hover:bg-gray-800 flex items-center justify-center gap-2 w-full">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>                
+                <h3 class="text-lg font-semibold text-gray-800">Backup Granular de Captações</h3>
+                <p class="text-gray-600 mb-4">Selecione os corretores e o período (máximo 1 mês) para gerar um backup específico das captações.</p>
+                <div class="space-y-4 text-left">
+                    <div>
+                        <label for="backup-corretores" class="block text-sm font-medium text-gray-700">Corretores (opcional)</label>
+                        <select id="backup-corretores" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500">
+                            <!-- Options will be populated by JS -->
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">Selecione um corretor específico ou deixe "Todos" para um backup geral.</p>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="backup-start-date" class="block text-sm font-medium text-gray-700">Data de Início *</label>
+                            <input type="date" id="backup-start-date" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500">
+                        </div>
+                        <div>
+                            <label for="backup-end-date" class="block text-sm font-medium text-gray-700">Data Final *</label>
+                            <input type="date" id="backup-end-date" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500">
+                        </div>
+                    </div>
+                </div>
+                <button id="btn-create-backup" onclick="createBackup()" class="mt-6 px-6 py-3 bg-gray-700 text-white font-semibold rounded-lg hover:bg-gray-800 flex items-center justify-center gap-2 w-full">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
                     Gerar e Baixar Backup
                 </button>
@@ -442,8 +461,8 @@
                 <div class="my-10 border-t pt-10">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
                     <h3 class="text-lg font-semibold text-gray-800">Restauração de Backup</h3>
-                    <p class="text-gray-600 mb-4">Selecione um arquivo de backup (.json) para restaurar os dados. Os registros existentes serão atualizados e os novos serão adicionados, sem duplicar.</p>
-                    <input type="file" id="backup-file-input" accept=".json" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"/>
+                    <p class="text-gray-600 mb-4">Selecione até 5 arquivos de backup (.json) para restaurar. Os registros existentes serão atualizados e os novos serão adicionados, sem duplicar.</p>
+                    <input type="file" id="backup-file-input" accept=".json" multiple class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"/>
                     <button id="btn-upload-backup" onclick="uploadBackup()" class="mt-4 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2 w-full">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
                         Iniciar Restauração
@@ -791,7 +810,10 @@
             if (viewId === 'access-monitor') loadUserAccess();
             if (viewId === 'users-manager') loadUsersForConfig();
             if (viewId === 'termo-pdf-manager') loadTermoPDF();
-            if (viewId === 'backup-manager') logActivity('BACKUP_PAGE_VIEWED');
+            if (viewId === 'backup-manager') {
+                logActivity('BACKUP_PAGE_VIEWED');
+                loadBackupOptions();
+            }
 
         }
 
@@ -1531,88 +1553,157 @@
             });
         }
 
+        async function loadBackupOptions() {
+            const selectEl = document.getElementById('backup-corretores');
+            if (!selectEl) return;
+
+            // Prevent re-populating if already filled
+            if (selectEl.options.length > 0) return;
+
+            // Add a default option for all brokers
+            selectEl.add(new Option("Todos os Corretores", ""));
+
+            try {
+                // Removed .orderBy('nome') to prevent the need for a composite index, fixing the reported error.
+                const usersSnapshot = await db.collection('users').where('isActive', '==', true).get();
+                reads++;
+                updateCounters();
+
+                usersSnapshot.forEach(doc => {
+                    const user = doc.data();
+                    const userName = `${user.nome || ''} ${user.sobrenome || ''}`.trim() || user.email;
+                    const option = new Option(userName, doc.id);
+                    selectEl.add(option);
+                });
+
+            } catch (error) {
+                console.error("Error loading users for backup:", error);
+                selectEl.innerHTML = '<option disabled>Erro ao carregar corretores</option>';
+            }
+        }
+
         async function uploadBackup() {
             const fileInput = document.getElementById('backup-file-input');
-            const file = fileInput.files[0];
-            if (!file) {
-                showAlert('Por favor, selecione um arquivo de backup (.json) primeiro.', 'Arquivo Ausente');
+            const files = fileInput.files; // This is a FileList
+            if (files.length === 0) {
+                showAlert('Por favor, selecione um ou mais arquivos de backup (.json) primeiro.', 'Arquivo Ausente');
+                return;
+            }
+
+            if (files.length > 5) {
+                showAlert('Você pode restaurar no máximo 5 arquivos por vez.', 'Limite Excedido');
                 return;
             }
 
             const btn = document.getElementById('btn-upload-backup');
             const originalBtnHtml = btn.innerHTML;
 
-            const reader = new FileReader();
-            reader.onload = async function(event) {
-                try {
-                    const backupData = JSON.parse(event.target.result);
-                    const collections = Object.keys(backupData);
+            // Use a single confirmation for all files
+            showConfirm(`Você está prestes a restaurar dados de ${files.length} arquivo(s). Os dados existentes serão sobrescritos e os novos serão adicionados, sem duplicar. Deseja continuar?`,
+                'Confirmar Restauração de Backup',
+                async () => {
+                    resetInactivityTimer();
+                    btn.disabled = true;
+                    btn.innerText = 'Restaurando...';
+                    let totalWrites = 0;
+                    let totalCollections = new Set();
 
-                    showConfirm(`Você está prestes a restaurar dados para as seguintes coleções: ${collections.join(', ')}. Os dados existentes serão sobrescritos e os novos serão adicionados, sem duplicar. Deseja continuar?`,
-                        'Confirmar Restauração de Backup',
-                        async () => {
-                            resetInactivityTimer();
+                    try {
+                        for (const file of files) {
+                            const fileContent = await file.text();
+                            const backupData = JSON.parse(fileContent);
+                            const collections = Object.keys(backupData);
 
-                            btn.disabled = true;
-                            btn.innerText = 'Restaurando...';
-
-                            try {
-                                let totalWrites = 0;
-                                for (const collectionName of collections) {
-                                    if (Array.isArray(backupData[collectionName])) {
-                                        const collectionData = backupData[collectionName];
-                                        for (const doc of collectionData) {
-                                            if (doc.id) {
-                                                const docRef = db.collection(collectionName).doc(doc.id);
-                                                const { id, ...docData } = doc;
-                                                Object.keys(docData).forEach(key => {
-                                                    if (docData[key] && typeof docData[key] === 'object' && docData[key].seconds !== undefined) {
-                                                        docData[key] = new firebase.firestore.Timestamp(docData[key].seconds, docData[key].nanoseconds);
-                                                    }
-                                                });
-                                                await docRef.set(docData, { merge: true });
-                                                writes++;
-                                                totalWrites++;
-                                            }
+                            for (const collectionName of collections) {
+                                totalCollections.add(collectionName);
+                                if (Array.isArray(backupData[collectionName])) {
+                                    const collectionData = backupData[collectionName];
+                                    for (const doc of collectionData) {
+                                        if (doc.id) {
+                                            const docRef = db.collection(collectionName).doc(doc.id);
+                                            const { id, ...docData } = doc;
+                                            // Convert Firestore Timestamp-like objects back to Timestamps
+                                            Object.keys(docData).forEach(key => {
+                                                if (docData[key] && typeof docData[key] === 'object' && docData[key].seconds !== undefined) {
+                                                    docData[key] = new firebase.firestore.Timestamp(docData[key].seconds, docData[key].nanoseconds);
+                                                }
+                                            });
+                                            await docRef.set(docData, { merge: true });
+                                            writes++;
+                                            totalWrites++;
                                         }
                                     }
                                 }
-                                logActivity('BACKUP_RESTORED', { collections: collections, records: totalWrites });
-                                updateCounters();
-                                showAlert(`Restauração concluída com sucesso! ${totalWrites} registros foram processados.`, 'Sucesso');
-                            } catch (error) {
-                                showAlert('Falha ao restaurar o backup. Verifique o console para mais detalhes.', 'Erro de Restauração');
-                            } finally {
-                                btn.disabled = false;
-                                btn.innerHTML = originalBtnHtml;
-                                fileInput.value = '';
                             }
                         }
-                    );
-
-                } catch (error) {
-                    showAlert('Falha ao restaurar o backup. Verifique o console para mais detalhes e se o arquivo é um JSON válido.', 'Erro de Restauração');
+                        logActivity('BACKUP_RESTORED', { collections: Array.from(totalCollections), records: totalWrites, fileCount: files.length });
+                        updateCounters();
+                        showAlert(`Restauração concluída com sucesso! ${totalWrites} registros foram processados de ${files.length} arquivo(s).`, 'Sucesso');
+                    } catch (error) {
+                        console.error("Restore error:", error);
+                        showAlert('Falha ao restaurar o backup. Verifique o console para mais detalhes e se os arquivos são JSONs válidos.', 'Erro de Restauração');
+                    } finally {
+                        btn.disabled = false;
+                        btn.innerHTML = originalBtnHtml;
+                        fileInput.value = ''; // Clear the file input
+                    }
                 }
-            };
-            reader.readAsText(file);
+            );
         }
 
         async function createBackup() {
             const btn = document.getElementById('btn-create-backup');
             btn.disabled = true;
             btn.innerText = 'Gerando...';
-
+        
             try {
                 resetInactivityTimer();
-                const collectionsToBackup = ['captacoes', 'avisos', 'feedback', 'users', 'audit_logs'];
-                const backupData = {};
-
-                for (const collectionName of collectionsToBackup) {
-                    const snapshot = await db.collection(collectionName).get();
-                    reads++;
-                    backupData[collectionName] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+                const selectedBrokerUID = document.getElementById('backup-corretores').value;
+                const startDateString = document.getElementById('backup-start-date').value;
+                const endDateString = document.getElementById('backup-end-date').value;
+                if (!startDateString || !endDateString) {
+                    showAlert('As datas de início e fim são obrigatórias.', 'Datas Ausentes');
+                    return;
                 }
-
+        
+                const startDate = new Date(startDateString + 'T00:00:00');
+                const endDate = new Date(endDateString + 'T23:59:59');
+        
+                if (startDate > endDate) {
+                    showAlert('A data de início não pode ser posterior à data final.', 'Período Inválido');
+                    return;
+                }
+        
+                const diffTime = Math.abs(endDate - startDate);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                if (diffDays > 31) {
+                    showAlert('O período de backup não pode exceder 1 mês (31 dias).', 'Período Excedido');
+                    return;
+                }
+        
+                let query = db.collection('captacoes');
+        
+                query = query.where('createdAt', '>=', firebase.firestore.Timestamp.fromDate(startDate))
+                             .where('createdAt', '<=', firebase.firestore.Timestamp.fromDate(endDate));
+        
+                if (selectedBrokerUID) {
+                    query = query.where('owner_uid', '==', selectedBrokerUID);
+                }
+                
+                const snapshot = await query.get();
+                reads++;
+                
+                const backupData = {
+                    captacoes: snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+                };
+        
+                if (snapshot.empty) {
+                    showAlert('Nenhuma captação encontrada para os filtros selecionados.', 'Nenhum Dado');
+                    return;
+                }
+        
                 updateCounters();
                 const jsonString = JSON.stringify(backupData, null, 2);
                 const blob = new Blob([jsonString], { type: 'application/json' });
@@ -1620,16 +1711,18 @@
                 const a = document.createElement('a');
                 a.href = url;
                 const date = new Date().toISOString().slice(0, 10);
-                a.download = `backup-captafacil-${date}.json`;
+                const brokersText = selectedBrokerUID ? `_corretor` : '_todos';
+                a.download = `backup-captafacil-${date}${brokersText}.json`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
-                logActivity('BACKUP_CREATED');
+                logActivity('BACKUP_CREATED', { filters: { broker: selectedBrokerUID, startDate: startDateString, endDate: endDateString } });
                 showAlert('Backup gerado com sucesso!', 'Sucesso');
-
+        
             } catch (error) {
-                showAlert('Falha ao criar o backup.', 'Erro');
+                console.error("Backup error:", error);
+                showAlert('Falha ao criar o backup. Verifique o console para mais detalhes.', 'Erro');
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg> Gerar e Baixar Backup';
