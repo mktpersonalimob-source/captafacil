@@ -826,6 +826,10 @@
         <!-- Seção: Dados do Imóvel -->
         <div class="pdf-section-title">2. DADOS DO IMÓVEL</div>
         <div class="pdf-row top-border">
+            <div class="pdf-cell" style="flex: 1.5;"><span class="pdf-label">TIPOLOGIA DO IMÓVEL</span><span class="pdf-value out-imovel-tipologia"></span></div>
+            <div class="pdf-cell" style="flex: 2.5;"><span class="pdf-label">EDIFÍCIO / CONDOMÍNIO</span><span class="pdf-value out-imovel-edificio"></span></div>
+        </div>
+        <div class="pdf-row">
             <div class="pdf-cell" style="flex: 2;"><span class="pdf-label">ENDEREÇO DO IMÓVEL</span><span class="pdf-value out-imovel-endereco"></span></div>
             <div class="pdf-cell"><span class="pdf-label">NÚMERO</span><span class="pdf-value out-imovel-numero"></span></div>
             <div class="pdf-cell"><span class="pdf-label">COMPLEMENTO</span><span class="pdf-value out-imovel-complemento"></span></div>
@@ -1265,11 +1269,13 @@
         function populatePrintContainer(data, signatureData = null) {
             const setText = (selector, value, upper = false) => {
                 document.querySelectorAll(selector).forEach(el => {
-                    let finalValue = value || '-';
+                    let finalValue = value || '-'; // Fallback para valores nulos/vazios
                     if (upper) finalValue = finalValue.toUpperCase();
                     el.innerText = finalValue;
                 });
             };
+
+            const isZeroOrEmpty = (val) => !val || val === 'R$ 0,00' || val === '0';
 
             const formatDate = (dateString) => {
                 if (!dateString) return new Date().toLocaleDateString('pt-BR');
@@ -1362,12 +1368,12 @@
             setText('.out-carac-condominio', caracCondo.join(' • '), true);
 
             setText('.out-carac-obs', data.caracObs, true);
-            setText('.out-valor-venda', data.valorVenda);
-            setText('.out-valor-locacao', data.valorLocacao);
-            setText('.out-valor-aluguel-comercial', data.valorAluguelComercial);
-            setText('.out-valor-condominio', data.valorCondominio);
-            setText('.out-valor-iptu', data.valorIptu);
-            setText('.out-taxa-lixo', data.taxaLixo);
+            setText('.out-valor-venda', isZeroOrEmpty(data.valorVenda) ? '-' : data.valorVenda);
+            setText('.out-valor-locacao', isZeroOrEmpty(data.valorLocacao) ? '-' : data.valorLocacao);
+            setText('.out-valor-aluguel-comercial', isZeroOrEmpty(data.valorAluguelComercial) ? '-' : data.valorAluguelComercial);
+            setText('.out-valor-condominio', isZeroOrEmpty(data.valorCondominio) ? '-' : data.valorCondominio);
+            setText('.out-valor-iptu', isZeroOrEmpty(data.valorIptu) ? '-' : data.valorIptu);
+            setText('.out-taxa-lixo', isZeroOrEmpty(data.taxaLixo) ? '-' : data.taxaLixo);
             setText('.out-taxa-inicial', data.taxaInicial ? `${data.taxaInicial}%` : '');
             setText('.out-taxa-mensal', data.taxaMensal ? `${data.taxaMensal}%` : '');
             setText('.out-documentacao', data.documentacao, true);
