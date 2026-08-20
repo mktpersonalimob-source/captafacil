@@ -41,7 +41,12 @@ window.CaptaFacil = window.CaptaFacil || {};
         let profile = authService.getCurrentProfile();
 
         if (user && !profile) {
-            profile = await authService.fetchProfile(user);
+            try {
+                profile = await authService.fetchProfile(user);
+            } catch (e) {
+                console.warn("Não foi possível obter o perfil do usuário:", e);
+                profile = null;
+            }
         }
 
         hideGlobalSpinner();

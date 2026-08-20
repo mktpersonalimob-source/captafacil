@@ -46,10 +46,14 @@ window.CaptaFacil = window.CaptaFacil || {};
             const user = cred.user;
             const userRef = db.collection("users").doc(user.uid);
 
-            await userRef.set({
-                email: user.email,
-                last_seen: fb.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
+            try {
+                await userRef.set({
+                    email: user.email,
+                    last_seen: fb.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+            } catch (e) {
+                console.warn("Não foi possível atualizar perfil no Firestore após login:", e);
+            }
 
             try {
                 await db.collection("audit_logs").add({
@@ -57,11 +61,20 @@ window.CaptaFacil = window.CaptaFacil || {};
                     userEmail: user.email,
                     timestamp: fb.firestore.FieldValue.serverTimestamp()
                 });
-            } catch (e) {}
+            } catch (e) {
+                console.warn("Não foi possível registrar log de login:", e);
+            }
 
-            const profileDoc = await userRef.get();
-            if (profileDoc.exists) {
-                currentUserProfile = { id: profileDoc.id, ...profileDoc.data() };
+            try {
+                const profileDoc = await userRef.get();
+                if (profileDoc.exists) {
+                    currentUserProfile = { id: profileDoc.id, ...profileDoc.data() };
+                } else {
+                    currentUserProfile = null;
+                }
+            } catch (e) {
+                console.warn("Não foi possível carregar perfil do usuário:", e);
+                currentUserProfile = null;
             }
             return { user, profile: currentUserProfile };
         },
@@ -71,13 +84,19 @@ window.CaptaFacil = window.CaptaFacil || {};
                 currentUserProfile = null;
                 return null;
             }
-            const doc = await db.collection("users").doc(user.uid).get();
-            if (doc.exists) {
-                currentUserProfile = { id: doc.id, ...doc.data() };
-            } else {
+            try {
+                const doc = await db.collection("users").doc(user.uid).get();
+                if (doc.exists) {
+                    currentUserProfile = { id: doc.id, ...doc.data() };
+                } else {
+                    currentUserProfile = null;
+                }
+                return currentUserProfile;
+            } catch (e) {
+                console.warn("Perfil não acessível por regras do Firestore:", e);
                 currentUserProfile = null;
+                return null;
             }
-            return currentUserProfile;
         },
 
         async saveSetup(uid, data) {
