@@ -1459,8 +1459,38 @@
                 const element = document.getElementById('print-container');
                 const canvas = await html2canvas(element, { scale: 2, useCORS: true });
                 const imgData = canvas.toDataURL('image/jpeg', 1.0);
-                const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+                // Ensure jsPDF is available (handle CDN load failures)
+                async function ensureJsPDF() {
+                    if (window.jspdf && (window.jspdf.jsPDF || window.jspdf.default)) {
+                        return window.jspdf.jsPDF || window.jspdf.default;
+                    }
+                    const cdns = [
+                        'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+                        'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js',
+                        'https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js'
+                    ];
+                    for (const url of cdns) {
+                        try {
+                            await new Promise((resolve, reject) => {
+                                const s = document.createElement('script');
+                                s.src = url;
+                                s.async = true;
+                                s.onload = () => resolve();
+                                s.onerror = () => reject(new Error('Failed to load ' + url));
+                                document.head.appendChild(s);
+                            });
+                            if (window.jspdf && (window.jspdf.jsPDF || window.jspdf.default)) {
+                                return window.jspdf.jsPDF || window.jspdf.default;
+                            }
+                        } catch (e) {
+                            console.warn('Failed to load jsPDF from', url, e);
+                        }
+                    }
+                    throw new Error('jsPDF library not available (CDN load failed)');
+                }
+
+                const JsPDFCtor = await ensureJsPDF();
+                const pdf = new JsPDFCtor({ orientation: 'p', unit: 'mm', format: 'a4' });
                 const pdfWidth = pdf.internal.pageSize.getWidth();
                 const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
                 pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
