@@ -75,7 +75,7 @@ window.CaptaFacil = window.CaptaFacil || {};
         }
 
         // 4. Rota exclusiva de Admin
-        if (routeKey === "admin" && !authService.isAdmin(user, profile)) {
+        if (routeKey === "admin" && !authService.canAccessAdminPanel(user, profile)) {
             window.location.hash = "#/home";
             return;
         }

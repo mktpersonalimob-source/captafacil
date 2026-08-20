@@ -26,29 +26,29 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
                     </div>
 
                     <div class="mb-8">
-                        <div class="flex justify-between items-center relative">
-                            <div class="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-gray-200 z-0"></div>
-                            <div id="step-progress-bar" class="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-orange-600 z-0 transition-all duration-300" style="width: 0%;"></div>
+                        <div class="flex justify-between items-start gap-1 sm:gap-2 relative">
+                            <div class="absolute left-0 top-4 -translate-y-1/2 w-full h-1 bg-gray-200 z-0"></div>
+                            <div id="step-progress-bar" class="absolute left-0 top-4 -translate-y-1/2 h-1 bg-orange-600 z-0 transition-all duration-300" style="width: 0%;"></div>
 
-                            <div class="step-indicator z-10 flex flex-col items-center cursor-pointer" data-step="1">
+                            <div class="step-indicator z-10 flex flex-1 flex-col items-center text-center cursor-pointer min-w-0" data-step="1">
                                 <span class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs bg-orange-600 text-white shadow-md">1</span>
-                                <span class="text-[11px] font-semibold text-orange-600 mt-1">Proprietário</span>
+                                <span class="text-[9px] sm:text-[11px] font-semibold text-orange-600 mt-1 leading-tight">Proprietário</span>
                             </div>
-                            <div class="step-indicator z-10 flex flex-col items-center cursor-pointer" data-step="2">
+                            <div class="step-indicator z-10 flex flex-1 flex-col items-center text-center cursor-pointer min-w-0" data-step="2">
                                 <span class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs bg-gray-200 text-gray-600">2</span>
-                                <span class="text-[11px] font-semibold text-gray-400 mt-1">Imóvel</span>
+                                <span class="text-[9px] sm:text-[11px] font-semibold text-gray-400 mt-1 leading-tight">Imóvel</span>
                             </div>
-                            <div class="step-indicator z-10 flex flex-col items-center cursor-pointer" data-step="3">
+                            <div class="step-indicator z-10 flex flex-1 flex-col items-center text-center cursor-pointer min-w-0" data-step="3">
                                 <span class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs bg-gray-200 text-gray-600">3</span>
-                                <span class="text-[11px] font-semibold text-gray-400 mt-1">Detalhes</span>
+                                <span class="text-[9px] sm:text-[11px] font-semibold text-gray-400 mt-1 leading-tight">Detalhes</span>
                             </div>
-                            <div class="step-indicator z-10 flex flex-col items-center cursor-pointer" data-step="4">
+                            <div class="step-indicator z-10 flex flex-1 flex-col items-center text-center cursor-pointer min-w-0" data-step="4">
                                 <span class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs bg-gray-200 text-gray-600">4</span>
-                                <span class="text-[11px] font-semibold text-gray-400 mt-1">Valores</span>
+                                <span class="text-[9px] sm:text-[11px] font-semibold text-gray-400 mt-1 leading-tight">Valores</span>
                             </div>
-                            <div class="step-indicator z-10 flex flex-col items-center cursor-pointer" data-step="5">
+                            <div class="step-indicator z-10 flex flex-1 flex-col items-center text-center cursor-pointer min-w-0" data-step="5">
                                 <span class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs bg-gray-200 text-gray-600">5</span>
-                                <span class="text-[11px] font-semibold text-gray-400 mt-1">Finalizar</span>
+                                <span class="text-[9px] sm:text-[11px] font-semibold text-gray-400 mt-1 leading-tight">Finalizar</span>
                             </div>
                         </div>
                     </div>

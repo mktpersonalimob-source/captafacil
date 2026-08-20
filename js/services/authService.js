@@ -8,6 +8,8 @@ window.CaptaFacil = window.CaptaFacil || {};
     const { auth, db, fb, ADMIN_EMAILS } = exports.firebase;
     let currentUserProfile = null;
 
+    const MASTER_ADMIN_EMAIL = 'gui.mont0ani@gmail.com';
+
     const authService = {
         getCurrentUser() {
             return auth.currentUser;
@@ -17,10 +19,26 @@ window.CaptaFacil = window.CaptaFacil || {};
             return currentUserProfile;
         },
 
+        isMasterAdmin(user = null) {
+            const u = user || auth.currentUser;
+            if (!u || !u.email) return false;
+            return (u.email || '').toLowerCase().trim() === MASTER_ADMIN_EMAIL;
+        },
+
+        canAccessAdminPanel(user = null, profile = null) {
+            const u = user || auth.currentUser;
+            if (!u || !u.email) return false;
+            if (this.isMasterAdmin(u)) return true;
+            const currentProfile = profile || currentUserProfile || u.profile || {};
+            return currentProfile.canAccessAdminView === true;
+        },
+
         isAdmin(user = null, profile = null) {
             const u = user || auth.currentUser;
             if (!u || !u.email) return false;
-            return ADMIN_EMAILS.includes(u.email.toLowerCase().trim());
+            if (this.isMasterAdmin(u)) return true;
+            const currentProfile = profile || currentUserProfile || u.profile || {};
+            return ADMIN_EMAILS.includes(u.email.toLowerCase().trim()) || currentProfile.canAccessAdminView === true;
         },
 
         async login(email, password) {
@@ -71,6 +89,7 @@ window.CaptaFacil = window.CaptaFacil || {};
                 equipe: data.equipe,
                 setup_completed: true,
                 isActive: true,
+                canAccessAdminView: false,
                 createdAt: fb.firestore.FieldValue.serverTimestamp(),
                 updatedAt: fb.firestore.FieldValue.serverTimestamp()
             };

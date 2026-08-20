@@ -16,18 +16,18 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 pb-24">
 
                 <!-- CARD DE BOAS-VINDAS: Saudação + Relógio + Data -->
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                    <div class="flex flex-wrap justify-between items-center gap-4">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
+                    <div class="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
                         <!-- Saudação e equipe -->
-                        <div id="greeting-message" class="space-y-1">
-                            <h2 class="text-2xl font-black text-gray-800 tracking-tight">Carregando...</h2>
+                        <div id="greeting-message" class="space-y-1 min-w-0">
+                            <h2 class="text-xl sm:text-2xl font-black text-gray-800 tracking-tight break-words">Carregando...</h2>
                             <p class="text-xs text-gray-500">Equipe: <strong class="text-orange-600" id="greeting-team">—</strong></p>
                         </div>
 
                         <!-- Relógio e Data -->
-                        <div class="text-right">
-                            <div id="clock-display" class="text-3xl sm:text-4xl font-black text-gray-900 tracking-tighter leading-none tabular-nums">--:--</div>
-                            <div id="date-display" class="text-xs font-semibold text-gray-500 mt-1 capitalize"></div>
+                        <div class="text-left sm:text-right">
+                            <div id="clock-display" class="text-2xl sm:text-4xl font-black text-gray-900 tracking-tighter leading-none tabular-nums">--:--</div>
+                            <div id="date-display" class="text-[11px] sm:text-xs font-semibold text-gray-500 mt-1 capitalize"></div>
                         </div>
                     </div>
                 </div>
@@ -117,9 +117,9 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
 
             <!-- ===== RODAPÉ FIXO (Limpo: Conexão/Contador R/W, Sobre e Admin) ===== -->
             <footer class="fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur border-t border-gray-200 shadow-sm py-2 px-4">
-                <div class="max-w-5xl mx-auto flex flex-wrap justify-between items-center gap-3 text-xs">
+                <div class="max-w-5xl mx-auto flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center text-xs">
                     <!-- Status de Conexão e Contador Firebase -->
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 justify-center sm:justify-start">
                         <span class="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
                         <span class="font-semibold text-green-600">Conectado</span>
                         <span class="text-gray-300">|</span>
@@ -127,7 +127,7 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
                     </div>
 
                     <!-- Sobre e Botão Painel Admin -->
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center gap-3 sm:justify-end">
                         <button id="btn-open-about" class="font-semibold text-gray-500 hover:text-orange-600 hover:underline transition-colors">Sobre</button>
                         <a href="#/admin" id="footer-admin-btn" class="hidden px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg shadow-sm transition-all flex items-center gap-1">
                             <span>PAINEL ADMIN</span>
@@ -283,10 +283,11 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
             exports.firebase.counter.updateUI();
         }
 
-        // Exibir botão de admin no rodapé se for admin
-        if (authService.isAdmin(user, profile)) {
-            const adminBtn = document.getElementById("footer-admin-btn");
+        const adminBtn = document.getElementById("footer-admin-btn");
+        if (authService.canAccessAdminPanel(user, profile)) {
             if (adminBtn) adminBtn.classList.remove("hidden");
+        } else if (adminBtn) {
+            adminBtn.classList.add("hidden");
         }
 
         // Relógio e Data em tempo real

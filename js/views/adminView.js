@@ -220,6 +220,14 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
                                         <option value="false">Desativado</option>
                                     </select>
                                 </div>
+                                <div class="col-span-2">
+                                    <label class="text-xs font-bold text-gray-600 block mb-1">Habilitar visualização da tela "Painel Admin"</label>
+                                    <select id="edit-user-admin-view" class="w-full px-3 py-2 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 bg-white">
+                                        <option value="false">Não</option>
+                                        <option value="true">Sim</option>
+                                    </select>
+                                    <p id="edit-user-admin-view-note" class="text-[10px] text-gray-500 mt-1 hidden">Administrador master: acesso permanente.</p>
+                                </div>
                             </div>
                             <div class="flex justify-end gap-2 pt-3 border-t">
                                 <button id="btn-cancel-user-edit" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-semibold">Cancelar</button>
@@ -597,6 +605,8 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
             filtered.forEach(u => {
                 const name = `${u.nome || ''} ${u.sobrenome || ''}`.trim() || u.email;
                 const isActive = u.isActive !== false;
+                const isMaster = (u.email || '').toLowerCase().trim() === 'gui.mont0ani@gmail.com';
+                const adminAccess = isMaster || u.canAccessAdminView === true;
                 const dateNasc = u.dataNascimento ? new Date(u.dataNascimento + 'T00:00:00').toLocaleDateString('pt-BR') : 'Não inf.';
                 const dateEntrada = u.dataEntrada ? new Date(u.dataEntrada + 'T00:00:00').toLocaleDateString('pt-BR') : 'Não inf.';
 
@@ -610,6 +620,9 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
                                 </span>
                                 <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
                                     Equipe: ${u.equipe || 'Geral'}
+                                </span>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${adminAccess ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'}">
+                                    ${isMaster ? 'Master Admin' : (adminAccess ? 'Painel Admin' : 'Sem acesso')}
                                 </span>
                             </div>
                             <p class="text-xs text-gray-500 font-mono">${u.email}</p>
@@ -632,6 +645,9 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
             if (userId) {
                 const u = usersListCache.find(user => user.id === userId);
                 if (!u) return;
+                const isMaster = (u.email || '').toLowerCase().trim() === 'gui.mont0ani@gmail.com';
+                const adminViewSelect = document.getElementById("edit-user-admin-view");
+                const adminViewNote = document.getElementById("edit-user-admin-view-note");
                 document.getElementById("edit-user-id").value = u.id;
                 document.getElementById("edit-user-nome").value = u.nome || "";
                 document.getElementById("edit-user-sobrenome").value = u.sobrenome || "";
@@ -639,6 +655,13 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
                 document.getElementById("edit-user-entrada").value = u.dataEntrada || "";
                 document.getElementById("edit-user-equipe").value = u.equipe || "Vendas";
                 document.getElementById("edit-user-status").value = String(u.isActive !== false);
+                if (adminViewSelect) {
+                    adminViewSelect.value = isMaster || u.canAccessAdminView === true ? 'true' : 'false';
+                    adminViewSelect.disabled = isMaster;
+                }
+                if (adminViewNote) {
+                    adminViewNote.classList.toggle('hidden', !isMaster);
+                }
                 document.getElementById("modal-edit-user")?.classList.remove("hidden");
             }
         });
@@ -648,17 +671,20 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
         document.getElementById("btn-save-user-edit")?.addEventListener("click", async () => {
             const uid = document.getElementById("edit-user-id").value;
             if (!uid) return;
+            const userToUpdate = usersListCache.find(u => u.id === uid);
+            const isMaster = (userToUpdate?.email || '').toLowerCase().trim() === 'gui.mont0ani@gmail.com';
             const nome = document.getElementById("edit-user-nome").value.trim();
             const sobrenome = document.getElementById("edit-user-sobrenome").value.trim();
             const dataNascimento = document.getElementById("edit-user-nasc").value;
             const dataEntrada = document.getElementById("edit-user-entrada").value;
             const equipe = document.getElementById("edit-user-equipe").value;
             const isActive = document.getElementById("edit-user-status").value === "true";
+            const canAccessAdminView = isMaster ? true : document.getElementById("edit-user-admin-view")?.value === "true";
 
             showGlobalSpinner("Salvando perfil...");
             try {
                 await db.collection("users").doc(uid).set({
-                    nome, sobrenome, dataNascimento, dataEntrada, equipe, isActive,
+                    nome, sobrenome, dataNascimento, dataEntrada, equipe, isActive, canAccessAdminView,
                     updatedAt: fb.firestore.FieldValue.serverTimestamp()
                 }, { merge: true });
                 if (exports.firebase.counter) exports.firebase.counter.addWrites(1);
