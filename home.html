@@ -956,22 +956,16 @@
             <span class="font-semibold text-green-600">Conectado</span>
         </div>
         <div class="flex items-center gap-x-4 gap-y-2 justify-center sm:justify-end flex-wrap">
-            <button id="about-modal-btn" title="Sobre o sistema" class="font-semibold text-gray-500 hover:underline">Sobre</button>
-            <div class="flex items-center gap-x-4 gap-y-2">
-                <a href="admin.html" id="admin-button" title="Acessar Painel Administrativo" class="hidden px-3 py-1 bg-blue-600 text-white font-bold rounded-lg shadow hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 transition-all flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3m-9.75 6.75h16.5c.621 0 1.125-.504 1.125-1.125V6.625c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v10.25c0 .621.504 1.125 1.125 1.125z"/>
-                    </svg>
-                    <span>PAINEL ADMIN</span>
-                </a>
-                <span id="firebase-counter-wrapper" class="hidden items-center gap-1" title="Leituras / Escritas no Firestore (Sessão)">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-gray-500">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9Z"/>
-                </svg>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-gray-500">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487Zm0 0L19.5 7.125"/>
-                </svg>
-                <span id="firebase-counter-display" class="font-semibold text-gray-700">0/0</span>
+        <button id="about-modal-btn" title="Sobre o sistema" class="font-semibold text-gray-500 hover:underline">Sobre</button>
+        <div class="flex items-center gap-x-4 gap-y-2">
+            <span id="firebase-counter-wrapper" class="hidden items-center gap-1" title="Leituras / Escritas no Firestore (Sessão)">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-gray-500">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9Z"/>
+            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-gray-500">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487Zm0 0L19.5 7.125"/>
+            </svg>
+            <span id="firebase-counter-display" class="font-semibold text-gray-700">0/0</span>
             </span>
             </div>
             <span class="text-gray-400 font-mono">1.5 beta</span>
@@ -2259,17 +2253,35 @@
         function initializeApp(user, userName, userData) { // Accept userName and userData
             document.getElementById('global-loading-spinner').classList.add('hidden'); // Hide loading spinner
             currentUser = user; // Set currentUser here
-            const adminBtn = document.getElementById('admin-button');
             const isAdminEmail = (email) => email && String(email).toLowerCase().trim() === adminEmail.toLowerCase();
+            // Create admin button dynamically for admin only to avoid accidental exposure in DOM
+            function createAdminButton() {
+                if (document.getElementById('admin-button')) return; // already exists
+                const counterWrapper = document.getElementById('firebase-counter-wrapper');
+                const container = counterWrapper ? counterWrapper.parentElement : document.querySelector('footer .flex.items-center.gap-x-4');
+                if (!container) return;
+                const a = document.createElement('a');
+                a.href = 'admin.html';
+                a.id = 'admin-button';
+                a.title = 'Acessar Painel Administrativo';
+                a.className = 'px-3 py-1 bg-blue-600 text-white font-bold rounded-lg shadow hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 transition-all flex items-center gap-1';
+                a.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3m-9.75 6.75h16.5c.621 0 1.125-.504 1.125-1.125V6.625c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v10.25c0 .621.504 1.125 1.125 1.125z"/></svg><span>PAINEL ADMIN</span>`;
+                // Insert before counterWrapper if present
+                if (counterWrapper) container.insertBefore(a, counterWrapper);
+                else container.appendChild(a);
+            }
+
             if (isAdminEmail(user.email)) {
-                if (adminBtn) adminBtn.classList.remove('hidden');
+                createAdminButton();
                 const counterWrapper = document.getElementById('firebase-counter-wrapper');
                 if (counterWrapper) {
                     counterWrapper.classList.remove('hidden');
                     counterWrapper.classList.add('flex');
                 }
             } else {
-                if (adminBtn) adminBtn.classList.add('hidden');
+                // Ensure no admin button remains in DOM for non-admin
+                const existing = document.getElementById('admin-button');
+                if (existing) existing.remove();
             }
             updateCounters();
             updateDateTime();
