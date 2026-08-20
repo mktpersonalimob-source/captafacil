@@ -2050,8 +2050,12 @@
                             console.error("Could not fetch user name", e);
                         }
 
-                        if (user.email === adminEmail) {
-                            document.getElementById('admin-button').classList.remove('hidden');
+                        const adminBtn = document.getElementById('admin-button');
+                        const isAdminEmail = (email) => email && String(email).toLowerCase().trim() === adminEmail.toLowerCase();
+                        if (isAdminEmail(user.email)) {
+                            if (adminBtn) adminBtn.classList.remove('hidden');
+                        } else {
+                            if (adminBtn) adminBtn.classList.add('hidden');
                         }
 
                         document.getElementById('global-loading-spinner').style.display = 'none';

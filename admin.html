@@ -1957,7 +1957,8 @@
         auth.onAuthStateChanged(function(user) {
             if (user) {
                 updateCounters(); // Exibe o contador persistido ao carregar a página
-                if (user.email === adminEmail) {
+                const isAdminEmail = (email) => email && String(email).toLowerCase().trim() === adminEmail.toLowerCase();
+                if (isAdminEmail(user.email)) {
                     fetchUserDetailsAdmin(user); // Call new function to check setup
                 } else {
                     // Usuário não é admin, redireciona para a home
