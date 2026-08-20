@@ -69,7 +69,7 @@
         .pdf-cell { padding: 6px 5px; border-right: 1px solid #000; flex: 1; display: flex; flex-direction: column; }
         .pdf-cell:last-child { border-right: none; }
         .pdf-label { font-size: 7px; font-weight: bold; color: #555; margin-bottom: 1px; }
-        .pdf-value { font-size: 9px; min-height: 12px; white-space: pre-wrap; word-break: break-word; line-height: 1.4; }
+        .pdf-value { font-size: 9px; min-height: 12px; white-space: normal; word-break: break-word; line-height: 1.4; }
 
         .signature-box { margin-top: 25px; display: flex; justify-content: space-between; }
         .signature-line {
@@ -1795,7 +1795,9 @@
         function populatePrintContainer(data, signatureData = null) {
             const setText = (selector, value, upper = false) => {
                 document.querySelectorAll(selector).forEach(el => {
-                    let finalValue = value || '-'; // Fallback para valores nulos/vazios
+                    let finalValue = (value === null || value === undefined || value === '') ? '-' : String(value);
+                    // Collapse newline sequences into a single space so text flows and wraps in the PDF
+                    finalValue = finalValue.replace(/\s*\r?\n+\s*/g, ' ').trim();
                     if (upper) finalValue = finalValue.toUpperCase();
                     el.innerText = finalValue;
                 });
