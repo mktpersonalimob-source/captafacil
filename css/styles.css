@@ -1,0 +1,127 @@
+/* ==========================================================================
+   CaptaFácil - Global Styles & Design System
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+    --primary-color: #EA580C;
+    --primary-hover: #C2410C;
+    --bg-base: #FFF9F3;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-base);
+    color: #374151;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
+/* Background Pattern */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 800'%3E%3Cg%3E%3Crect fill='%23FFF9F3' width='1200' height='800'/%3E%3Cg opacity='0.5'%3E%3Cpath fill='%23E2803B' d='m-108.8 188.4 108.8 188.5h217.6l108.8-188.5-108.8-188.4H.1z'/%3E%3Cpath fill='%23E2803B' d='m0 0 .1 188.4 108.7 188.4h217.6L435.1 0 326.4-188.4H108.8z'/%3E%3Cpath fill='%23E2803B' d='m783.4 800 104.2 180.4h208.3L1200 800l-104.1-180.4H887.6z'/%3E%3Cpath fill='%23E2803B' d='m-188.9 800 94.5 163.6h188.9L189 800l-94.5-163.6h-189z'/%3E%3Cpath fill='%23E2803B' d='m1092 0 54 93.5h108l54-93.5-54-93.5h-108z'/%3E%3Cpath fill='%23E2803B' d='m991.7 619.6 104.2 180.4h208.3L1408.3 619.6l-104.1-180.4h-208.3z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    z-index: -1;
+}
+
+/* Utilitários de visualização */
+.view { display: none; }
+.step-content { display: none; }
+.active { display: block; }
+
+/* Signature Pad */
+#signature-pad {
+    border: 2px dashed #CBD5E1;
+    touch-action: none;
+    cursor: crosshair;
+}
+
+/* ==========================================================================
+   ESTILOS DO TEMPLATE DE IMPRESSÃO PDF (Simulando o Excel A4)
+   ========================================================================== */
+#print-container {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+    background: #fff;
+    width: 210mm; /* A4 width */
+    min-height: 297mm; /* A4 height */
+    padding: 7mm;
+    box-sizing: border-box;
+    color: #000;
+    font-family: Arial, sans-serif;
+    font-size: 10px;
+}
+
+.pdf-section-title {
+    background-color: #FFE8D9;
+    font-weight: bold;
+    padding: 3px 5px;
+    border: 1px solid #000;
+    margin-top: 6px;
+    text-transform: uppercase;
+    font-size: 10px;
+}
+
+.pdf-row {
+    display: flex;
+    border-left: 1px solid #000;
+    border-right: 1px solid #000;
+    border-bottom: 1px solid #000;
+}
+
+.pdf-row.top-border {
+    border-top: 1px solid #000;
+}
+
+.pdf-cell {
+    padding: 6px 5px;
+    border-right: 1px solid #000;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.pdf-cell:last-child {
+    border-right: none;
+}
+
+.pdf-label {
+    font-size: 7px;
+    font-weight: bold;
+    color: #555;
+    margin-bottom: 1px;
+}
+
+.pdf-value {
+    font-size: 9px;
+    min-height: 12px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.4;
+}
+
+.signature-box {
+    margin-top: 25px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.signature-line {
+    width: 45%;
+    border-top: 1px solid #000;
+    text-align: center;
+    padding-top: 5px;
+    font-size: 9px;
+    font-weight: bold;
+}
