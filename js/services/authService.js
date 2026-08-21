@@ -8,8 +8,6 @@ window.CaptaFacil = window.CaptaFacil || {};
     const { auth, db, fb, ADMIN_EMAILS } = exports.firebase;
     let currentUserProfile = null;
 
-    const MASTER_ADMIN_EMAIL = 'gui.mont0ani@gmail.com';
-
     const authService = {
         getCurrentUser() {
             return auth.currentUser;
@@ -19,26 +17,10 @@ window.CaptaFacil = window.CaptaFacil || {};
             return currentUserProfile;
         },
 
-        isMasterAdmin(user = null) {
-            const u = user || auth.currentUser;
-            if (!u || !u.email) return false;
-            return (u.email || '').toLowerCase().trim() === MASTER_ADMIN_EMAIL;
-        },
-
-        canAccessAdminPanel(user = null, profile = null) {
-            const u = user || auth.currentUser;
-            if (!u || !u.email) return false;
-            if (this.isMasterAdmin(u)) return true;
-            const currentProfile = profile || currentUserProfile || u.profile || {};
-            return currentProfile.canAccessAdminView === true;
-        },
-
         isAdmin(user = null, profile = null) {
             const u = user || auth.currentUser;
             if (!u || !u.email) return false;
-            if (this.isMasterAdmin(u)) return true;
-            const currentProfile = profile || currentUserProfile || u.profile || {};
-            return ADMIN_EMAILS.includes(u.email.toLowerCase().trim()) || currentProfile.canAccessAdminView === true;
+            return ADMIN_EMAILS.includes(u.email.toLowerCase().trim());
         },
 
         async login(email, password) {
@@ -46,14 +28,10 @@ window.CaptaFacil = window.CaptaFacil || {};
             const user = cred.user;
             const userRef = db.collection("users").doc(user.uid);
 
-            try {
-                await userRef.set({
-                    email: user.email,
-                    last_seen: fb.firestore.FieldValue.serverTimestamp()
-                }, { merge: true });
-            } catch (e) {
-                console.warn("Não foi possível atualizar perfil no Firestore após login:", e);
-            }
+            await userRef.set({
+                email: user.email,
+                last_seen: fb.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
 
             try {
                 await db.collection("audit_logs").add({
@@ -61,20 +39,11 @@ window.CaptaFacil = window.CaptaFacil || {};
                     userEmail: user.email,
                     timestamp: fb.firestore.FieldValue.serverTimestamp()
                 });
-            } catch (e) {
-                console.warn("Não foi possível registrar log de login:", e);
-            }
+            } catch (e) {}
 
-            try {
-                const profileDoc = await userRef.get();
-                if (profileDoc.exists) {
-                    currentUserProfile = { id: profileDoc.id, ...profileDoc.data() };
-                } else {
-                    currentUserProfile = null;
-                }
-            } catch (e) {
-                console.warn("Não foi possível carregar perfil do usuário:", e);
-                currentUserProfile = null;
+            const profileDoc = await userRef.get();
+            if (profileDoc.exists) {
+                currentUserProfile = { id: profileDoc.id, ...profileDoc.data() };
             }
             return { user, profile: currentUserProfile };
         },
@@ -84,19 +53,13 @@ window.CaptaFacil = window.CaptaFacil || {};
                 currentUserProfile = null;
                 return null;
             }
-            try {
-                const doc = await db.collection("users").doc(user.uid).get();
-                if (doc.exists) {
-                    currentUserProfile = { id: doc.id, ...doc.data() };
-                } else {
-                    currentUserProfile = null;
-                }
-                return currentUserProfile;
-            } catch (e) {
-                console.warn("Perfil não acessível por regras do Firestore:", e);
+            const doc = await db.collection("users").doc(user.uid).get();
+            if (doc.exists) {
+                currentUserProfile = { id: doc.id, ...doc.data() };
+            } else {
                 currentUserProfile = null;
-                return null;
             }
+            return currentUserProfile;
         },
 
         async saveSetup(uid, data) {
@@ -108,7 +71,6 @@ window.CaptaFacil = window.CaptaFacil || {};
                 equipe: data.equipe,
                 setup_completed: true,
                 isActive: true,
-                canAccessAdminView: false,
                 createdAt: fb.firestore.FieldValue.serverTimestamp(),
                 updatedAt: fb.firestore.FieldValue.serverTimestamp()
             };

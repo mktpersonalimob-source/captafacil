@@ -41,12 +41,7 @@ window.CaptaFacil = window.CaptaFacil || {};
         let profile = authService.getCurrentProfile();
 
         if (user && !profile) {
-            try {
-                profile = await authService.fetchProfile(user);
-            } catch (e) {
-                console.warn("Não foi possível obter o perfil do usuário:", e);
-                profile = null;
-            }
+            profile = await authService.fetchProfile(user);
         }
 
         hideGlobalSpinner();
@@ -80,7 +75,7 @@ window.CaptaFacil = window.CaptaFacil || {};
         }
 
         // 4. Rota exclusiva de Admin
-        if (routeKey === "admin" && !authService.canAccessAdminPanel(user, profile)) {
+        if (routeKey === "admin" && !authService.isAdmin(user, profile)) {
             window.location.hash = "#/home";
             return;
         }
