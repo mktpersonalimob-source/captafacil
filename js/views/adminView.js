@@ -1041,20 +1041,27 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
         // EVENTOS GLOBAIS DE DELEGAÇÃO DO ADMIN
         // ════════════════════════════════════════════════════════
         document.addEventListener("click", async (e) => {
-            const editId = e.target.getAttribute("data-adm-edit");
+            const editButton = e.target.closest("[data-adm-edit]");
+            const editId = editButton?.getAttribute("data-adm-edit");
             if (editId) {
                 window.location.hash = `#/form?edit=${editId}`;
                 return;
             }
 
-            const pdfId = e.target.getAttribute("data-adm-pdf");
+            const pdfButton = e.target.closest("[data-adm-pdf]");
+            const pdfId = pdfButton?.getAttribute("data-adm-pdf");
             if (pdfId) {
-                const capture = allCapturesCache.find(c => c.id === pdfId);
-                if (capture) await generatePDF(capture, e.target);
+                let capture = allCapturesCache.find(c => c.id === pdfId);
+                if (!capture) {
+                    capture = await captacaoService.getById(pdfId);
+                    if (capture) allCapturesCache.push(capture);
+                }
+                if (capture) await generatePDF(capture, pdfButton);
                 return;
             }
 
-            const delId = e.target.getAttribute("data-adm-del");
+            const delButton = e.target.closest("[data-adm-del]");
+            const delId = delButton?.getAttribute("data-adm-del");
             if (delId) {
                 const confirmed = await showConfirm("Deseja excluir permanentemente esta captação?", "Excluir Captação");
                 if (confirmed) {
