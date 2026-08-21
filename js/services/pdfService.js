@@ -401,7 +401,6 @@ window.CaptaFacil = window.CaptaFacil || {};
     }
 
     async function generatePDF(data, triggerButton = null) {
-        let signatureData = null;
         const originalButtonText = triggerButton ? triggerButton.textContent : null;
         if (triggerButton) {
             triggerButton.disabled = true;
@@ -410,18 +409,26 @@ window.CaptaFacil = window.CaptaFacil || {};
         showGlobalSpinner("Gerando documento PDF...");
 
         try {
-            if (data.signatureId && data.signatureStatus === 'signed') {
-                const sigDoc = await db.collection('assinaturas').doc(data.signatureId).get();
-                if (sigDoc.exists) {
-                    signatureData = sigDoc.data();
-                }
-            }
+            const signatureData = data.signatureData || (data.signatureImage ? {
+                signatureImage: data.signatureImage,
+                ownerName: data.propNome,
+                ownerCpf: data.propCpf,
+                signedAt: data.signatureSignedAt,
+                clientIp: data.clientIp,
+                deviceInfo: data.deviceInfo
+            } : null);
 
             populatePrintContainer(data, signatureData);
             const element = document.getElementById('print-container');
             if (!element) throw new Error('Container do PDF não foi encontrado.');
 
-            const canvas = await window.html2canvas(element, { scale: 2, useCORS: true, logging: false });
+            const canvas = await window.html2canvas(element, {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#ffffff'
+            });
+
             const imgData = canvas.toDataURL('image/jpeg', 1.0);
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
@@ -433,18 +440,28 @@ window.CaptaFacil = window.CaptaFacil || {};
             const captureShortId = data.id ? data.id.substring(0, 4) : 'TEMP';
             const fileName = `Ficha_Captacao_${nomeProprietario}_${captureShortId}.pdf`;
 
-            try {
-                pdf.save(fileName);
-            } catch (saveError) {
-                const blob = pdf.output('blob');
-                const url = URL.createObjectURL(blob);
+            const triggerDownload = (blobOrUrl, isBlob = false) => {
+                const url = isBlob ? URL.createObjectURL(blobOrUrl) : blobOrUrl;
                 const link = document.createElement('a');
                 link.href = url;
                 link.download = fileName;
+                link.style.display = 'none';
                 document.body.appendChild(link);
-                link.click();
-                link.remove();
-                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                try {
+                    link.click();
+                } catch (e) {
+                    window.open(url, '_blank');
+                }
+                setTimeout(() => {
+                    link.remove();
+                    if (isBlob) URL.revokeObjectURL(url);
+                }, 1000);
+            };
+
+            try {
+                pdf.save(fileName);
+            } catch (saveError) {
+                triggerDownload(pdf.output('blob'), true);
             }
 
         } catch (error) {
