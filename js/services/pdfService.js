@@ -402,6 +402,11 @@ window.CaptaFacil = window.CaptaFacil || {};
 
     async function generatePDF(data, triggerButton = null) {
         let signatureData = null;
+        const originalButtonText = triggerButton ? triggerButton.textContent : null;
+        if (triggerButton) {
+            triggerButton.disabled = true;
+            triggerButton.textContent = 'Gerando...';
+        }
         showGlobalSpinner("Gerando documento PDF...");
 
         try {
@@ -414,7 +419,8 @@ window.CaptaFacil = window.CaptaFacil || {};
 
             populatePrintContainer(data, signatureData);
             const element = document.getElementById('print-container');
-            
+            if (!element) throw new Error('Container do PDF não foi encontrado.');
+
             const canvas = await window.html2canvas(element, { scale: 2, useCORS: true, logging: false });
             const imgData = canvas.toDataURL('image/jpeg', 1.0);
             const { jsPDF } = window.jspdf;
@@ -426,12 +432,29 @@ window.CaptaFacil = window.CaptaFacil || {};
             const nomeProprietario = data.propNome?.split(' ')[0] || 'Ficha';
             const captureShortId = data.id ? data.id.substring(0, 4) : 'TEMP';
             const fileName = `Ficha_Captacao_${nomeProprietario}_${captureShortId}.pdf`;
-            pdf.save(fileName);
+
+            try {
+                pdf.save(fileName);
+            } catch (saveError) {
+                const blob = pdf.output('blob');
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+            }
 
         } catch (error) {
             console.error("Erro ao gerar PDF:", error);
             showAlert('Ocorreu um erro ao gerar o documento PDF: ' + error.message, 'Erro no PDF');
         } finally {
+            if (triggerButton) {
+                triggerButton.disabled = false;
+                triggerButton.textContent = originalButtonText || 'PDF';
+            }
             hideGlobalSpinner();
         }
     }
