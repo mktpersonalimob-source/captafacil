@@ -142,8 +142,11 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
                             <button data-adm-back class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold transition-colors">&larr; Voltar ao Menu Admin</button>
                         </div>
 
-                        <div class="relative">
-                            <input type="text" id="adm-captures-search" placeholder="Buscar por código, endereço, proprietário, corretor ou ID..." class="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500">
+                        <div class="flex flex-col sm:flex-row gap-3 items-center justify-between">
+                            <div class="relative flex-1 w-full">
+                                <input type="text" id="adm-captures-search" placeholder="Buscar por código, endereço, proprietário, corretor ou ID..." class="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <button id="btn-adm-refresh-captures" class="px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-xl shadow-sm transition-colors">Atualizar Lista</button>
                         </div>
 
                         <div id="adm-captures-list-container" class="space-y-3 min-h-[200px]">
@@ -155,6 +158,16 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
                             <button id="btn-adm-cap-prev" class="px-4 py-2 bg-white hover:bg-gray-100 border rounded-xl disabled:opacity-40">&larr; Anterior</button>
                             <span id="adm-cap-page-indicator">Página 1</span>
                             <button id="btn-adm-cap-next" class="px-4 py-2 bg-white hover:bg-gray-100 border rounded-xl disabled:opacity-40">Próxima &rarr;</button>
+                        </div>
+                    </div>
+
+                    <div id="modal-capture-status" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+                        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-5 space-y-4">
+                            <div class="flex justify-between items-center border-b pb-3">
+                                <h3 class="text-base font-bold text-gray-900">Status da Captação</h3>
+                                <button id="btn-close-capture-status-modal" class="text-gray-400 hover:text-gray-600 text-2xl font-bold leading-none">&times;</button>
+                            </div>
+                            <div id="capture-status-content" class="space-y-3 text-sm text-gray-700"></div>
                         </div>
                     </div>
 
@@ -451,6 +464,30 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
             return response.items;
         };
 
+        const refreshCapturesList = async () => {
+            capturesPageCache = [];
+            capturesPageCursors = [];
+            capturesHasMore = true;
+            currentPage = 1;
+            allCapturesCache = [];
+
+            const container = document.getElementById("adm-captures-list-container");
+            if (container) {
+                container.innerHTML = '<p class="text-center text-gray-400 py-10 animate-pulse text-sm">Atualizando captações...</p>';
+            }
+
+            try {
+                await fetchNextCapturePage();
+                allCapturesCache = await captacaoService.fetchAllCaptures();
+                renderCapturesCards();
+            } catch (error) {
+                console.error('Erro ao atualizar captações:', error);
+                if (container) {
+                    container.innerHTML = '<p class="text-center text-red-500 py-10 text-sm">Erro ao atualizar a lista de captações.</p>';
+                }
+            }
+        };
+
         const loadCapturesPaged = async (page = 1) => {
             currentPage = page;
             const container = document.getElementById("adm-captures-list-container");
@@ -459,9 +496,85 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
             if (!capturesPageCache.length) {
                 container.innerHTML = '<p class="text-center text-gray-400 py-10 animate-pulse text-sm">Buscando captações...</p>';
                 await fetchNextCapturePage();
+                allCapturesCache = await captacaoService.fetchAllCaptures();
             }
 
             renderCapturesCards();
+        };
+
+        const openCaptureStatusModal = async (captureId) => {
+            const modal = document.getElementById("modal-capture-status");
+            const content = document.getElementById("capture-status-content");
+            if (!modal || !content) return;
+
+            modal.classList.remove("hidden");
+            content.innerHTML = '<p class="text-center text-gray-400 py-6 text-sm animate-pulse">Carregando status...</p>';
+
+            try {
+                const capture = allCapturesCache.find(c => c.id === captureId) || await captacaoService.getById(captureId);
+                if (!capture) {
+                    content.innerHTML = '<p class="text-center text-red-500 py-4 text-sm">Captação não encontrada.</p>';
+                    return;
+                }
+
+                const status = capture.signatureStatus || 'not_signed';
+                const signedAt = capture.signatureSignedAt || (capture.signatureData && capture.signatureData.signedAt) || null;
+                const signedDate = signedAt && signedAt.seconds ? new Date(signedAt.seconds * 1000).toLocaleString('pt-BR') : 'Não registrado';
+                let badgeClass = 'bg-gray-100 text-gray-700';
+                let statusText = 'Não assinado';
+                let infoHtml = '<p class="text-xs text-gray-500">Ainda não há assinatura eletrônica registrada para esta captação.</p>';
+
+                if (status === 'signed') {
+                    badgeClass = 'bg-green-100 text-green-800';
+                    statusText = 'Assinado';
+                    infoHtml = `
+                        <div class="space-y-2">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-1 rounded-full text-[10px] font-bold ${badgeClass}">${statusText}</span>
+                                <span class="text-xs text-gray-500">Captação vinculada a assinatura</span>
+                            </div>
+                            <p class="text-xs text-gray-600"><strong>Assinado por:</strong> ${capture.propNome || 'Não informado'}</p>
+                            <p class="text-xs text-gray-600"><strong>Data:</strong> ${signedDate}</p>
+                            <p class="text-xs text-gray-600"><strong>ID da assinatura:</strong> ${capture.signatureId || 'N/A'}</p>
+                        </div>
+                    `;
+                } else if (status === 'pending') {
+                    badgeClass = 'bg-yellow-100 text-yellow-800';
+                    statusText = 'Pendente';
+                    const expiry = capture.signatureTokenExpires && capture.signatureTokenExpires.seconds ? new Date(capture.signatureTokenExpires.seconds * 1000).toLocaleString('pt-BR') : 'Não informado';
+                    infoHtml = `
+                        <div class="space-y-2">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-1 rounded-full text-[10px] font-bold ${badgeClass}">${statusText}</span>
+                                <span class="text-xs text-gray-500">Link de assinatura ativo</span>
+                            </div>
+                            <p class="text-xs text-gray-600"><strong>Validade do link:</strong> ${expiry}</p>
+                            <p class="text-xs text-gray-600"><strong>Token:</strong> ${capture.signatureToken || 'N/A'}</p>
+                        </div>
+                    `;
+                }
+
+                content.innerHTML = `
+                    <div class="space-y-3">
+                        <div class="p-3 rounded-xl bg-gray-50 border border-gray-200">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-xs font-bold text-gray-500 uppercase">Status</span>
+                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${badgeClass}">${statusText}</span>
+                            </div>
+                            <p class="mt-2 text-sm font-bold text-gray-900">${capture.imovelEndereco || 'Imóvel sem endereço'}, ${capture.imovelNumero || 'S/N'}</p>
+                        </div>
+                        ${infoHtml}
+                        <div class="border-t border-gray-200 pt-3 text-[11px] text-gray-500 space-y-1">
+                            <p><strong>Corretor:</strong> ${capture.corretorNome || capture.owner_email || 'Não informado'}</p>
+                            <p><strong>Proprietário:</strong> ${capture.propNome || 'Não informado'}</p>
+                            <p><strong>Código:</strong> ${capture.codigoImovel || 'N/A'}</p>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Erro ao carregar status da captação:', error);
+                content.innerHTML = '<p class="text-center text-red-500 py-4 text-sm">Erro ao carregar o status desta captação.</p>';
+            }
         };
 
         const renderCapturesCards = () => {
@@ -521,7 +634,7 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
                                 <h4 class="text-sm font-bold text-gray-900 leading-tight">${tipologia}</h4>
                                 <p class="text-xs text-gray-500 mt-0.5 line-clamp-1">${c.imovelEndereco || 'Sem endereço'}, ${c.imovelNumero || 'S/N'} - ${c.imovelBairro || ''}</p>
                             </div>
-                            <div class="flex-shrink-0">${badge}</div>
+                            <button type="button" data-adm-status="${c.id}" class="flex-shrink-0 cursor-pointer hover:opacity-90">${badge}</button>
                         </div>
                         <div class="text-xs text-gray-600 grid grid-cols-2 gap-1 pt-2 border-t border-gray-100">
                             <span class="truncate">Corretor: <strong class="text-gray-800">${c.corretorNome || c.owner_email || '-'}</strong></span>
@@ -554,7 +667,9 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
                 renderCapturesCards();
             }
         });
+        document.getElementById("btn-adm-refresh-captures")?.addEventListener("click", refreshCapturesList);
         document.getElementById("adm-captures-search")?.addEventListener("input", () => { currentPage = 1; renderCapturesCards(); });
+        document.getElementById("btn-close-capture-status-modal")?.addEventListener("click", () => document.getElementById("modal-capture-status")?.classList.add("hidden"));
 
         // ════════════════════════════════════════════════════════
         // 2. USUÁRIOS E EQUIPES (COM BUSCA EM TEMPO REAL)
@@ -1041,6 +1156,13 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
         // EVENTOS GLOBAIS DE DELEGAÇÃO DO ADMIN
         // ════════════════════════════════════════════════════════
         document.addEventListener("click", async (e) => {
+            const statusButton = e.target.closest("[data-adm-status]");
+            const statusId = statusButton?.getAttribute("data-adm-status");
+            if (statusId) {
+                await openCaptureStatusModal(statusId);
+                return;
+            }
+
             const editButton = e.target.closest("[data-adm-edit]");
             const editId = editButton?.getAttribute("data-adm-edit");
             if (editId) {
@@ -1051,12 +1173,18 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
             const pdfButton = e.target.closest("[data-adm-pdf]");
             const pdfId = pdfButton?.getAttribute("data-adm-pdf");
             if (pdfId) {
-                let capture = allCapturesCache.find(c => c.id === pdfId);
+                let capture = (capturesPageCache || []).flat().find(c => c.id === pdfId)
+                    || allCapturesCache.find(c => c.id === pdfId);
+
                 if (!capture) {
-                    capture = await captacaoService.getById(pdfId);
+                    capture = await captacaoService.getById(pdfId).catch(() => null);
                     if (capture) allCapturesCache.push(capture);
                 }
-                if (capture) await generatePDF(capture, pdfButton);
+
+                if (capture) {
+                    const openPdf = () => generatePDF(capture, pdfButton);
+                    openPdf();
+                }
                 return;
             }
 

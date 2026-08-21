@@ -130,10 +130,14 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
 
         const hash = window.location.hash || "";
         let token = null;
+
         if (hash.includes("token=")) {
-            token = hash.split("token=")[1].split("&")[0];
-        } else {
-            token = new URLSearchParams(window.location.search).get("token");
+            const hashQuery = hash.includes('?') ? hash.substring(hash.indexOf('?') + 1) : '';
+            token = new URLSearchParams(hashQuery).get('token');
+        }
+
+        if (!token) {
+            token = new URLSearchParams(window.location.search).get('token');
         }
 
         const showView = (id) => {

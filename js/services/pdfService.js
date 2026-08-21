@@ -259,6 +259,21 @@ window.CaptaFacil = window.CaptaFacil || {};
         return container;
     }
 
+    async function waitForImageToLoad(imgEl) {
+        if (!imgEl || !imgEl.src) return;
+        if (imgEl.complete && imgEl.naturalWidth > 0) return;
+
+        await new Promise((resolve) => {
+            const done = () => {
+                imgEl.removeEventListener('load', done);
+                imgEl.removeEventListener('error', done);
+                resolve();
+            };
+            imgEl.addEventListener('load', done, { once: true });
+            imgEl.addEventListener('error', done, { once: true });
+        });
+    }
+
     function populatePrintContainer(data, signatureData = null) {
         ensurePrintContainer();
 
@@ -409,7 +424,19 @@ window.CaptaFacil = window.CaptaFacil || {};
         showGlobalSpinner("Gerando documento PDF...");
 
         try {
-            const signatureData = data.signatureData || (data.signatureImage ? {
+            let resolvedSignatureData = null;
+            if (data.signatureId) {
+                try {
+                    const sigDoc = await db.collection('assinaturas').doc(data.signatureId).get();
+                    if (sigDoc.exists) {
+                        resolvedSignatureData = { id: sigDoc.id, ...sigDoc.data() };
+                    }
+                } catch (error) {
+                    console.warn('Não foi possível carregar a assinatura vinculada ao PDF:', error);
+                }
+            }
+
+            const signatureData = resolvedSignatureData || data.signatureData || (data.signatureImage ? {
                 signatureImage: data.signatureImage,
                 ownerName: data.propNome,
                 ownerCpf: data.propCpf,
@@ -419,6 +446,11 @@ window.CaptaFacil = window.CaptaFacil || {};
             } : null);
 
             populatePrintContainer(data, signatureData);
+            const signImageEl = document.getElementById('pdf-signature-image');
+            if (signImageEl && signImageEl.src) {
+                await waitForImageToLoad(signImageEl);
+            }
+
             const element = document.getElementById('print-container');
             if (!element) throw new Error('Container do PDF não foi encontrado.');
 
@@ -442,27 +474,38 @@ window.CaptaFacil = window.CaptaFacil || {};
 
             const triggerDownload = (blobOrUrl, isBlob = false) => {
                 const url = isBlob ? URL.createObjectURL(blobOrUrl) : blobOrUrl;
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = fileName;
-                link.style.display = 'none';
-                document.body.appendChild(link);
-                try {
-                    link.click();
-                } catch (e) {
-                    window.open(url, '_blank');
+                const newWindow = window.open(url, '_blank');
+                if (!newWindow) {
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = fileName;
+                    link.style.display = 'none';
+                    document.body.appendChild(link);
+                    try {
+                        link.click();
+                    } catch (e) {
+                        window.open(url, '_blank');
+                    }
+                    setTimeout(() => {
+                        link.remove();
+                        if (isBlob) URL.revokeObjectURL(url);
+                    }, 1000);
+                } else {
+                    setTimeout(() => {
+                        if (isBlob) URL.revokeObjectURL(url);
+                    }, 15000);
                 }
-                setTimeout(() => {
-                    link.remove();
-                    if (isBlob) URL.revokeObjectURL(url);
-                }, 1000);
             };
 
             try {
                 pdf.save(fileName);
             } catch (saveError) {
-                triggerDownload(pdf.output('blob'), true);
+                // no-op: alguns navegadores bloqueiam pdf.save() após a geração assíncrona.
             }
+
+            setTimeout(() => {
+                triggerDownload(pdf.output('blob'), true);
+            }, 200);
 
         } catch (error) {
             console.error("Erro ao gerar PDF:", error);

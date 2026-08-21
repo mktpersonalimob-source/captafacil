@@ -177,9 +177,16 @@ window.CaptaFacil = window.CaptaFacil || {};
             await batch.commit();
             if (counter) counter.addWrites(2);
 
-            const baseUrl = window.location.href.split("#")[0].split("?")[0];
-            const cleanBase = baseUrl.substring(0, baseUrl.lastIndexOf('/') + 1);
-            const signatureUrl = `${cleanBase}#/assinatura?token=${token}`;
+            const currentUrl = new URL(window.location.href);
+            currentUrl.hash = '';
+            currentUrl.search = '';
+
+            const currentPath = currentUrl.pathname || '/';
+            const basePath = currentPath.endsWith('/') ? currentPath : currentPath.substring(0, currentPath.lastIndexOf('/') + 1);
+            currentUrl.pathname = basePath;
+            currentUrl.hash = `#/assinatura?token=${encodeURIComponent(token)}`;
+
+            const signatureUrl = currentUrl.toString();
 
             return { token, signatureUrl };
         },
