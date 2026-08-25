@@ -80,7 +80,16 @@ window.CaptaFacil = window.CaptaFacil || {};
         },
 
         async logout() {
+            const email = auth.currentUser && auth.currentUser.email ? auth.currentUser.email : null;
             currentUserProfile = null;
+            try {
+                await db.collection("audit_logs").add({
+                    action: "LOGOUT",
+                    label: "Logout de usuário",
+                    userEmail: email,
+                    timestamp: fb.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (e) {}
             await auth.signOut();
         },
 

@@ -120,14 +120,52 @@ window.CaptaFacil = window.CaptaFacil || {};
             };
 
             if (editId) {
+                // Se a captação já estava assinada, qualquer edição deve invalidar a assinatura atual
+                try {
+                    const existingDoc = await db.collection("captacoes").doc(editId).get();
+                    const existingData = existingDoc.exists ? existingDoc.data() : null;
+                    if (existingData && existingData.signatureId && existingData.signatureStatus === 'signed') {
+                        // marcar para remover assinatura existente
+                        payload.signatureId = fb.firestore.FieldValue.delete();
+                        payload.signatureStatus = 'pending';
+                        try {
+                            await db.collection("audit_logs").add({
+                                action: "ASSINATURA_INVALIDADA",
+                                label: "Assinatura invalidada por edição de captação",
+                                userEmail: user.email,
+                                captureId: editId,
+                                timestamp: fb.firestore.FieldValue.serverTimestamp()
+                            });
+                        } catch (e) {}
+                    }
+                } catch (e) {}
+
                 await db.collection("captacoes").doc(editId).set(payload, { merge: true });
                 if (counter) counter.addWrites(1);
+                try {
+                    await db.collection("audit_logs").add({
+                        action: "CAPTACAO_UPDATE",
+                        label: "Captação atualizada",
+                        userEmail: user.email,
+                        captureId: editId,
+                        timestamp: fb.firestore.FieldValue.serverTimestamp()
+                    });
+                } catch (e) {}
                 return editId;
             } else {
                 payload.createdAt = fb.firestore.FieldValue.serverTimestamp();
                 payload.status = payload.status || "Pendente";
                 const docRef = await db.collection("captacoes").add(payload);
                 if (counter) counter.addWrites(1);
+                try {
+                    await db.collection("audit_logs").add({
+                        action: "CAPTACAO_CREATE",
+                        label: "Captação criada",
+                        userEmail: user.email,
+                        captureId: docRef.id,
+                        timestamp: fb.firestore.FieldValue.serverTimestamp()
+                    });
+                } catch (e) {}
                 return docRef.id;
             }
         },
@@ -135,7 +173,17 @@ window.CaptaFacil = window.CaptaFacil || {};
         async deleteCapture(id) {
             await db.collection("captacoes").doc(id).delete();
             if (counter) counter.addWrites(1);
+            try {
+                await db.collection("audit_logs").add({
+                    action: "CAPTACAO_DELETE",
+                    label: "Captação excluída",
+                    userEmail: auth.currentUser && auth.currentUser.email ? auth.currentUser.email : null,
+                    captureId: id,
+                    timestamp: fb.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (e) {}
         },
+
 
         async generateSignatureLink(captureId) {
             if (counter) counter.addReads(1);
@@ -176,6 +224,16 @@ window.CaptaFacil = window.CaptaFacil || {};
 
             await batch.commit();
             if (counter) counter.addWrites(2);
+            try {
+                await db.collection("audit_logs").add({
+                    action: "SIGN_LINK_GENERATED",
+                    label: "Link de assinatura gerado",
+                    userEmail: auth.currentUser && auth.currentUser.email ? auth.currentUser.email : null,
+                    captureId: captureId,
+                    token: token,
+                    timestamp: fb.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (e) {}
 
             const currentUrl = new URL(window.location.href);
             currentUrl.hash = '';
@@ -198,7 +256,17 @@ window.CaptaFacil = window.CaptaFacil || {};
                 signatureStatus: "revoked"
             });
             if (counter) counter.addWrites(1);
+            try {
+                await db.collection("audit_logs").add({
+                    action: "ASSINATURA_REVOGADA",
+                    label: "Assinatura revogada",
+                    userEmail: auth.currentUser && auth.currentUser.email ? auth.currentUser.email : null,
+                    captureId: captureId,
+                    timestamp: fb.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (e) {}
         },
+
 
         async getSignature(signatureId) {
             if (counter) counter.addReads(1);
@@ -222,6 +290,16 @@ window.CaptaFacil = window.CaptaFacil || {};
 
             await batch.commit();
             if (counter) counter.addWrites(2);
+            try {
+                await db.collection("audit_logs").add({
+                    action: "ASSINATURA_VINCULADA",
+                    label: "Assinatura vinculada a captação",
+                    userEmail: auth.currentUser && auth.currentUser.email ? auth.currentUser.email : null,
+                    captureId: captureId,
+                    signatureId: signatureId,
+                    timestamp: fb.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (e) {}
         },
 
         async deleteSignature(signatureId) {
@@ -245,6 +323,15 @@ window.CaptaFacil = window.CaptaFacil || {};
 
             await batch.commit();
             if (counter) counter.addWrites(2);
+            try {
+                await db.collection("audit_logs").add({
+                    action: "ASSINATURA_EXCLUIDA",
+                    label: "Assinatura excluída",
+                    userEmail: auth.currentUser && auth.currentUser.email ? auth.currentUser.email : null,
+                    signatureId: signatureId,
+                    timestamp: fb.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (e) {}
         },
 
         async sendFeedback(userEmail, message) {

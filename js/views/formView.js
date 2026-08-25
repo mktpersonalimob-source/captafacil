@@ -497,6 +497,21 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
             editId = hash.split("edit=")[1].split("&")[0];
         }
 
+        // Se for criação (sem editId), avisar o usuário sobre preenchimento e edição antes da assinatura (apenas uma vez por sessão)
+        if (!editId) {
+            try {
+                const alertKey = 'capta_new_capture_alert_shown';
+                if (!sessionStorage.getItem(alertKey)) {
+                    showAlert("Ao preencher uma nova captação, preencha os dados corretamente. Se necessário, edite os dados antes de coletar a assinatura. Qualquer edição após a captação estar assinada exigirá uma nova assinatura.", "Atenção", () => {
+                        try { sessionStorage.setItem(alertKey, '1'); } catch (e) {}
+                    });
+                }
+            } catch (e) {
+                // se sessionStorage estiver indisponível, mostrar o alerta normalmente
+                showAlert("Ao preencher uma nova captação, preencha os dados corretamente. Se necessário, edite os dados antes de coletar a assinatura. Qualquer edição após a captação estar assinada exigirá uma nova assinatura.", "Atenção");
+            }
+        }
+
         // Mask helper for Currency (R$ 0,00)
         const maskCurrency = (input) => {
             if (!input) return;

@@ -402,7 +402,7 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
                     if (exports.firebase.counter) exports.firebase.counter.addReads(usersSnap.size || 1);
                     usersSnap.forEach(doc => {
                         const u = doc.data();
-                        if (u.dataNascimento) {
+                        if (u.dataNascimento && u.isActive !== false) {
                             const aniv = new Date(u.dataNascimento + 'T00:00:00');
                             if (hoje.getDate() === aniv.getDate() && hoje.getMonth() === aniv.getMonth()) {
                                 const userName = `${u.nome || ''} ${u.sobrenome || ''}`.trim() || u.email;

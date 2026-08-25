@@ -5,7 +5,7 @@
 window.CaptaFacil = window.CaptaFacil || {};
 
 (function(exports) {
-    const { db } = exports.firebase;
+    const { db, auth, fb } = exports.firebase;
     const { show: showGlobalSpinner, hide: hideGlobalSpinner } = exports.loading;
     const { alert: showAlert } = exports.modal;
 
@@ -502,6 +502,16 @@ window.CaptaFacil = window.CaptaFacil || {};
             } catch (saveError) {
                 // no-op: alguns navegadores bloqueiam pdf.save() após a geração assíncrona.
             }
+
+            try {
+                await db.collection('audit_logs').add({
+                    action: 'PDF_EXPORT',
+                    label: 'Exportação de PDF',
+                    userEmail: auth.currentUser && auth.currentUser.email ? auth.currentUser.email : null,
+                    captureId: data.id || null,
+                    timestamp: fb.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (e) {}
 
             setTimeout(() => {
                 triggerDownload(pdf.output('blob'), true);

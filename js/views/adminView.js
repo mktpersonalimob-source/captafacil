@@ -1109,12 +1109,22 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
                     let actionBadgeColor = 'bg-gray-100 text-gray-800 border-gray-300';
                     if (action.includes('LOGIN')) actionBadgeColor = 'bg-green-100 text-green-800 border-green-200';
                     else if (action.includes('LOGOUT')) actionBadgeColor = 'bg-yellow-100 text-yellow-800 border-yellow-200';
-                    else if (action.includes('CREATE') || action.includes('SAVE')) actionBadgeColor = 'bg-blue-100 text-blue-800 border-blue-200';
-                    else if (action.includes('DELETE') || action.includes('REVOKE')) actionBadgeColor = 'bg-red-100 text-red-800 border-red-200';
-                    else if (action.includes('SIGN')) actionBadgeColor = 'bg-purple-100 text-purple-800 border-purple-200';
+                    else if (action.includes('CREATE') || action.includes('SAVE') || action.includes('CAPTACAO_CREATE')) actionBadgeColor = 'bg-blue-100 text-blue-800 border-blue-200';
+                    else if (action.includes('DELETE') || action.includes('REVOKE') || action.includes('EXCLUIDA') || action.includes('CAPTACAO_DELETE')) actionBadgeColor = 'bg-red-100 text-red-800 border-red-200';
+                    else if (action.includes('SIGN') || action.includes('ASSINATURA') || action.includes('SIGN_LINK') || action.includes('PDF_EXPORT')) actionBadgeColor = 'bg-purple-100 text-purple-800 border-purple-200';
 
                     let detailsStr = '';
-                    if (log.details && typeof log.details === 'object') {
+                    // Exibe rótulo legível, depois outras chaves de contexto (captureId, signatureId, token, etc.)
+                    if (log.label) {
+                        detailsStr += `Rótulo: ${log.label}`;
+                    }
+                    Object.keys(log).forEach(k => {
+                        if (['action','userEmail','timestamp','label','details'].includes(k)) return;
+                        const v = log[k];
+                        if (v === undefined || v === null) return;
+                        detailsStr += (detailsStr ? ' | ' : '') + `${k}: ${v}`;
+                    });
+                    if (!detailsStr && log.details && typeof log.details === 'object') {
                         detailsStr = Object.entries(log.details).map(([k, v]) => `${k}: ${v}`).join(' | ');
                     }
 
