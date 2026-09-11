@@ -7,6 +7,12 @@ window.CaptaFacil = window.CaptaFacil || {};
 (function(exports) {
     const { db, fb, auth, counter } = exports.firebase;
 
+    const assertWritable = () => {
+        if (exports.authService.isMaintenanceBlocked()) {
+            throw new Error(exports.firebase.MAINTENANCE_MESSAGE);
+        }
+    };
+
     const captacaoService = {
         async getById(id) {
             if (counter) counter.addReads(1);
@@ -74,6 +80,7 @@ window.CaptaFacil = window.CaptaFacil || {};
         async saveCapture(data, editId = null) {
             const user = auth.currentUser;
             if (!user) throw new Error("Usuário não autenticado");
+            assertWritable();
             // Server-side validation to keep consistency with frontend rules
             const validateCaptureData = (d) => {
                 const hasDigits = (s) => { return !!(s && String(s).replace(/\D/g, '').length); };
@@ -171,6 +178,7 @@ window.CaptaFacil = window.CaptaFacil || {};
         },
 
         async deleteCapture(id) {
+            assertWritable();
             await db.collection("captacoes").doc(id).delete();
             if (counter) counter.addWrites(1);
             try {
@@ -186,6 +194,7 @@ window.CaptaFacil = window.CaptaFacil || {};
 
 
         async generateSignatureLink(captureId) {
+            assertWritable();
             if (counter) counter.addReads(1);
             const captureDoc = await db.collection("captacoes").doc(captureId).get();
             if (!captureDoc.exists) throw new Error("Captação não encontrada.");
@@ -250,6 +259,7 @@ window.CaptaFacil = window.CaptaFacil || {};
         },
 
         async revokeSignature(captureId) {
+            assertWritable();
             const captureRef = db.collection("captacoes").doc(captureId);
             await captureRef.update({
                 signatureId: fb.firestore.FieldValue.delete(),
@@ -276,6 +286,7 @@ window.CaptaFacil = window.CaptaFacil || {};
         },
 
         async linkSignatureToCapture(signatureId, captureId) {
+            assertWritable();
             const batch = db.batch();
             const sigRef = db.collection("assinaturas").doc(signatureId);
             batch.update(sigRef, { captureId: captureId });
@@ -303,6 +314,7 @@ window.CaptaFacil = window.CaptaFacil || {};
         },
 
         async deleteSignature(signatureId) {
+            assertWritable();
             if (counter) counter.addReads(1);
             const sigDoc = await db.collection("assinaturas").doc(signatureId).get();
             const batch = db.batch();
@@ -335,6 +347,7 @@ window.CaptaFacil = window.CaptaFacil || {};
         },
 
         async sendFeedback(userEmail, message) {
+            assertWritable();
             await db.collection("feedback").add({
                 userEmail,
                 message,

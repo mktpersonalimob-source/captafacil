@@ -32,7 +32,7 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
                             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                             <span>Atualizar</span>
                         </button>
-                        <a href="#/form" class="px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-md transition-all">
+                        <a href="#/form" id="history-new-capture" class="px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-md transition-all">
                             + Nova Captação
                         </a>
                     </div>
@@ -133,6 +133,7 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
 
     function mountHistoryView() {
         const user = authService.getCurrentUser();
+        const maintenanceBlocked = authService.isMaintenanceBlocked(user);
         let allCaptures = [];
         let dadosFiltrados = [];
         let currentPage = 1;
@@ -258,7 +259,7 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
 
                     <!-- Barra de Ações com Botões Grandes -->
                     <div class="flex flex-wrap sm:flex-nowrap gap-2 pt-2 border-t border-gray-100">
-                        <button data-action="edit" data-id="${data.id}" data-signed="${isSigned}" class="flex-1 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors">
+                        <button data-action="edit" data-id="${data.id}" data-signed="${isSigned}" ${maintenanceBlocked ? 'disabled' : ''} class="flex-1 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                             <span>Editar</span>
                         </button>
@@ -266,7 +267,7 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
                             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
                             <span>Gerar PDF</span>
                         </button>
-                        <button data-action="signature" data-id="${data.id}" data-signed="${isSigned}" class="flex-1 py-2.5 bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors">
+                        <button data-action="signature" data-id="${data.id}" data-signed="${isSigned}" ${maintenanceBlocked ? 'disabled' : ''} class="flex-1 py-2.5 bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L14.732 3.732z"/></svg>
                             <span>${isSigned ? 'Reassinar' : 'Coletar Assinatura'}</span>
                         </button>
@@ -431,6 +432,10 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
         };
 
         const handleSignatureAction = async (captureId, isSigned) => {
+            if (maintenanceBlocked) {
+                showAlert(exports.firebase.MAINTENANCE_MESSAGE, "Sistema em manutenção");
+                return;
+            }
             if (isSigned) {
                 const confirmed = await showConfirm(
                     "Esta captação já possui uma assinatura válida registrada. Gerar um novo link irá invalidar a assinatura atual. Deseja continuar?",
@@ -486,6 +491,10 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
             }
 
             if (action === "edit") {
+                if (maintenanceBlocked) {
+                    showAlert(exports.firebase.MAINTENANCE_MESSAGE, "Sistema em manutenção");
+                    return;
+                }
                 if (isSigned) {
                     const confirmed = await showConfirm(
                         "Esta captação já foi assinada. Se você editá-la e salvar, a assinatura atual precisará ser refeita. Deseja continuar?",
@@ -547,6 +556,11 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
             allCaptures = [];
             dadosFiltrados = [];
             await loadCaptures();
+        });
+        document.getElementById("history-new-capture")?.addEventListener("click", (event) => {
+            if (!maintenanceBlocked) return;
+            event.preventDefault();
+            showAlert(exports.firebase.MAINTENANCE_MESSAGE, "Sistema em manutenção");
         });
 
         // Eventos de Modais

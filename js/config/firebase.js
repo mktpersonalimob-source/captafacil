@@ -18,6 +18,9 @@ window.CaptaFacil = window.CaptaFacil || {};
     const ADMIN_EMAILS = [
         "gui.mont0ani@gmail.com"
     ];
+    const MASTER_ADMIN_EMAIL = "gui.mont0ani@gmail.com";
+    const MAINTENANCE_MODE = true;
+    const MAINTENANCE_MESSAGE = "Sistema em processo de migração. O cadastro de novas captações está temporariamente suspenso.";
 
     if (!window.firebase.apps || window.firebase.apps.length === 0) {
         window.firebase.initializeApp(firebaseConfig);
@@ -56,6 +59,9 @@ window.CaptaFacil = window.CaptaFacil || {};
     exports.firebase = {
         config: firebaseConfig,
         ADMIN_EMAILS: ADMIN_EMAILS,
+        MASTER_ADMIN_EMAIL: MASTER_ADMIN_EMAIL,
+        MAINTENANCE_MODE: MAINTENANCE_MODE,
+        MAINTENANCE_MESSAGE: MAINTENANCE_MESSAGE,
         auth: auth,
         db: db,
         fb: fb,

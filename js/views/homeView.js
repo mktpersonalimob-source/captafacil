@@ -34,7 +34,7 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
 
                 <!-- CARDS PRINCIPAIS: Nova Captação + Minhas Captações -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <a href="#/form" class="group block p-6 bg-orange-600 hover:bg-orange-700 text-white rounded-2xl shadow-lg transition-all hover:-translate-y-0.5">
+                    <a href="#/form" id="home-new-capture" class="group block p-6 bg-orange-600 hover:bg-orange-700 text-white rounded-2xl shadow-lg transition-all hover:-translate-y-0.5">
                         <div class="flex items-start gap-4">
                             <div class="p-3 bg-white/15 rounded-xl flex-shrink-0">
                                 <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -135,6 +135,38 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
                     </div>
                 </div>
             </footer>
+
+            <!-- Modal: Aviso de Migração -->
+            <div id="modal-migration-notice" class="hidden fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4">
+                <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-amber-200">
+                    <div class="bg-amber-50 border-b border-amber-200 p-6 flex items-start gap-3">
+                        <span class="text-3xl" aria-hidden="true">⚠️</span>
+                        <div>
+                            <h2 class="text-xl font-black text-amber-950">AVISO IMPORTANTE: MIGRAÇÃO DO CAPTAFÁCIL</h2>
+                            <p class="text-sm text-amber-900 mt-1">O sistema está em processo de migração definitiva para a nova infraestrutura:</p>
+                            <p class="font-bold text-amber-950 mt-1 break-all">captafacil.imobiliariapersonal.com.br</p>
+                        </div>
+                    </div>
+                    <div class="p-6 space-y-4 text-sm text-gray-700">
+                        <p class="font-bold text-gray-900">Durante este período de transição:</p>
+                        <ul class="list-disc pl-5 space-y-2">
+                            <li>O cadastro de novas captações, edições e envio de novos pedidos de assinatura estão <strong>suspensos</strong>.</li>
+                            <li>O acesso às captações anteriores e o <strong>download de arquivos permanecem liberados</strong>.</li>
+                            <li>Os links de assinaturas já enviados continuarão funcionando até a data de expiração.</li>
+                        </ul>
+                        <div class="bg-orange-50 border border-orange-200 rounded-xl p-4 space-y-1">
+                            <p><strong>Data da Migração Completa:</strong> 14/09/2026</p>
+                            <p><strong>Redefinição de Acesso:</strong> Nenhum dado ou histórico será perdido. A partir da migração, solicite redefinições ou atualizações de senha ao setor de Marketing.</p>
+                        </div>
+                    </div>
+                    <div class="p-4 bg-gray-50 border-t border-gray-200 flex justify-end">
+                        <button id="btn-close-migration-notice" class="px-6 py-2.5 bg-orange-600 hover:bg-orange-700 text-white text-sm font-bold rounded-xl shadow-sm">Entendi</button>
+                    </div>
+                </div>
+            </div>
+            <button id="btn-open-migration-notice" class="fixed right-4 bottom-16 sm:bottom-5 z-40 px-4 py-3 bg-amber-500 hover:bg-amber-600 text-amber-950 font-black text-xs rounded-full shadow-lg border-2 border-white" aria-label="Abrir aviso de migração">
+                ⚠️ Aviso de Migração
+            </button>
 
             <!-- Modal: Sobre o Sistema -->
             <div id="modal-about" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
@@ -277,6 +309,21 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
     function mountHomeView() {
         const user = authService.getCurrentUser();
         const profile = authService.getCurrentProfile();
+
+        const openMigrationNotice = () => document.getElementById("modal-migration-notice")?.classList.remove("hidden");
+        const closeMigrationNotice = () => document.getElementById("modal-migration-notice")?.classList.add("hidden");
+        document.getElementById("btn-open-migration-notice")?.addEventListener("click", openMigrationNotice);
+        document.getElementById("btn-close-migration-notice")?.addEventListener("click", closeMigrationNotice);
+        document.getElementById("modal-migration-notice")?.addEventListener("click", (event) => {
+            if (event.target?.id === "modal-migration-notice") closeMigrationNotice();
+        });
+        if (!authService.isMasterAdmin(user)) {
+            document.getElementById("home-new-capture")?.addEventListener("click", (event) => {
+                event.preventDefault();
+                showAlert(exports.firebase.MAINTENANCE_MESSAGE, "Sistema em manutenção");
+            });
+        }
+        setTimeout(openMigrationNotice, 0);
 
         // Atualizar contador do Firebase na interface
         if (exports.firebase.counter) {

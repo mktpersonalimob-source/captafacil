@@ -23,6 +23,15 @@ window.CaptaFacil = window.CaptaFacil || {};
             return ADMIN_EMAILS.includes(u.email.toLowerCase().trim());
         },
 
+        isMasterAdmin(user = null) {
+            const u = user || auth.currentUser;
+            return !!(u && u.email && u.email.toLowerCase().trim() === exports.firebase.MASTER_ADMIN_EMAIL);
+        },
+
+        isMaintenanceBlocked(user = null) {
+            return exports.firebase.MAINTENANCE_MODE && !this.isMasterAdmin(user);
+        },
+
         async login(email, password) {
             const cred = await auth.signInWithEmailAndPassword(email, password);
             const user = cred.user;

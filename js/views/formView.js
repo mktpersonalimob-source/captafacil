@@ -483,8 +483,17 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
     function mountFormView() {
         const user = authService.getCurrentUser();
         const profile = authService.getCurrentProfile();
+        const maintenanceBlocked = authService.isMaintenanceBlocked(user);
         let currentStep = 1;
         const totalSteps = 5;
+
+        if (maintenanceBlocked) {
+            document.querySelectorAll('#captacao-form input, #captacao-form select, #captacao-form textarea, #captacao-form button').forEach((element) => {
+                element.disabled = true;
+            });
+            showAlert(exports.firebase.MAINTENANCE_MESSAGE, "Sistema em manutenção");
+            return;
+        }
 
         const corretorInput = document.getElementById("f-corretor-nome");
         if (corretorInput) {
