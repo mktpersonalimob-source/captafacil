@@ -39,6 +39,24 @@ body::before {
 .step-content { display: none; }
 .active { display: block; }
 
+.login-form-wrapper {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    visibility: hidden;
+    pointer-events: none;
+    transition: max-height 0.35s ease, opacity 0.25s ease, margin-top 0.25s ease, visibility 0.25s ease;
+    margin-top: 0;
+}
+
+.login-form-wrapper.is-visible {
+    max-height: 420px;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    margin-top: 0.5rem;
+}
+
 /* Signature Pad */
 #signature-pad {
     border: 2px dashed #CBD5E1;

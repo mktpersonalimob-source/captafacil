@@ -24,36 +24,72 @@ window.CaptaFacil.views = window.CaptaFacil.views || {};
                         <p class="text-sm text-gray-500 font-medium">Acesse sua conta para continuar</p>
                     </div>
 
-                    <form id="login-form" class="space-y-4 text-left" onsubmit="return false;">
-                        <div>
-                            <label for="login-email" class="text-sm font-semibold text-gray-700">E-mail</label>
-                            <input id="login-email" name="email" type="email" required placeholder="seu.email@personal.com.br"
-                                   class="w-full px-4 py-2.5 mt-1 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm">
+                    <div class="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 p-5 text-left shadow-sm">
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-amber-500 text-white text-sm font-bold">!</span>
+                            <p class="text-base font-bold text-amber-900">Sistema migrado</p>
                         </div>
-                        <div>
-                            <label for="login-password" class="text-sm font-semibold text-gray-700">Senha</label>
-                            <input id="login-password" name="password" type="password" required placeholder="••••••••"
-                                   class="w-full px-4 py-2.5 mt-1 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm">
-                        </div>
-                        
-                        <button type="submit" id="btn-login-submit"
-                                class="w-full px-4 py-3 font-bold text-white bg-orange-600 rounded-xl hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 shadow-md transition-all text-sm mt-2">
-                            Entrar no Sistema
-                        </button>
+                        <p class="text-sm leading-6 text-amber-900/90">
+                            Este sistema e endereço foram descontinuados. A nova versão do CaptaFácil já está em funcionamento no novo endereço.
+                        </p>
+                        <a href="https://captafacil.imobiliariapersonal.com.br" target="_blank" rel="noopener noreferrer"
+                           class="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-orange-600 px-4 py-3 text-sm font-bold text-white shadow-md transition hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
+                            Acessar Novo CaptaFácil
+                        </a>
+                    </div>
 
-                        <p id="login-error-msg" class="text-sm text-center text-red-600 font-medium min-h-[20px]"></p>
-                    </form>
+                    <button type="button" id="btn-toggle-login"
+                            class="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+                            aria-expanded="false">
+                        Quero fazer login neste link assim mesmo
+                    </button>
+
+                    <div id="login-form-wrapper" class="login-form-wrapper" aria-hidden="true">
+                        <form id="login-form" class="space-y-4 text-left" onsubmit="return false;">
+                            <div>
+                                <label for="login-email" class="text-sm font-semibold text-gray-700">E-mail</label>
+                                <input id="login-email" name="email" type="email" required placeholder="seu.email@personal.com.br"
+                                       class="w-full px-4 py-2.5 mt-1 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm">
+                            </div>
+                            <div>
+                                <label for="login-password" class="text-sm font-semibold text-gray-700">Senha</label>
+                                <input id="login-password" name="password" type="password" required placeholder="••••••••"
+                                       class="w-full px-4 py-2.5 mt-1 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm">
+                            </div>
+                            
+                            <button type="submit" id="btn-login-submit"
+                                    class="w-full px-4 py-3 font-bold text-white bg-orange-600 rounded-xl hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 shadow-md transition-all text-sm mt-2">
+                                Entrar no Sistema
+                            </button>
+
+                            <p id="login-error-msg" class="text-sm text-center text-red-600 font-medium min-h-[20px]"></p>
+                        </form>
+                    </div>
                 </div>
             </div>
         `;
     }
 
     function mountLoginView() {
+        const formWrapper = document.getElementById("login-form-wrapper");
+        const toggleBtn = document.getElementById("btn-toggle-login");
         const form = document.getElementById("login-form");
         const emailInput = document.getElementById("login-email");
         const passwordInput = document.getElementById("login-password");
         const errorMsg = document.getElementById("login-error-msg");
         const submitBtn = document.getElementById("btn-login-submit");
+
+        const setLoginFormVisible = (visible) => {
+            formWrapper.classList.toggle("is-visible", visible);
+            formWrapper.setAttribute("aria-hidden", String(!visible));
+            toggleBtn.setAttribute("aria-expanded", String(visible));
+            toggleBtn.textContent = visible ? "Ocultar formulário de login" : "Quero fazer login neste link assim mesmo";
+        };
+
+        toggleBtn.addEventListener("click", () => {
+            const isVisible = formWrapper.classList.contains("is-visible");
+            setLoginFormVisible(!isVisible);
+        });
 
         form.addEventListener("submit", async (e) => {
             e.preventDefault();
